@@ -1,0 +1,72 @@
+/* Variables */
+:root {
+  --nadir-transition-normal: .2s;
+  --nadir-round-md: 0.625rem;
+  --nadir-space-xl: 5px;
+  --nadir-space-sm: 10px;
+  --nadir-space-md: 20px;
+
+  --nadir-button-bg: hsl(225, 100%, 40%);
+  --nadir-button-bg-hover: hsl(225, 100%, 30%);
+  --nadir-button-bg-hover-light: hsl(225, 100%, 97%);
+  --nadir-button-color: #fff;
+  --nadir-button-sm-font-size: 0.75rem;
+  --nadir-button-md-font-size: 1rem;
+  --nadir-button-lg-font-size: 1.25rem;
+  --nadir-button-xl-font-size: 1.5rem;
+  --nadir-button-padding: 0.625em 1.25em;
+}
+
+/* Defaults */
+.nadir_button {
+  --nadir-button-font-size: var(--nadir-button-md-font-size);
+  padding: var(--nadir-button-padding);
+  font-size: var(--nadir-button-font-size);
+  background-color: var(--nadir-button-bg);
+  color: var(--nadir-button-color);
+  border: 2px solid var(--nadir-button-bg);
+  border-radius: var(--nadir-round-md);
+  transition: var(--nadir-transition-normal) background-color, var(--nadir-transition-normal) border-color;
+}
+
+.nadir_button:hover {
+  background-color: var(--nadir-button-bg-hover);
+}
+
+/* Sizes */
+.nadir_button--sm {
+  --nadir-button-font-size: var(--nadir-button-sm-font-size);
+}
+
+.nadir_button--lg {
+  --nadir-button-font-size: var(--nadir-button-lg-font-size);
+}
+
+.nadir_button--xl {
+  --nadir-button-font-size: var(--nadir-button-xl-font-size);
+}
+
+/* Variants */
+.nadir_button--pill {
+  border-radius: 99rem;
+}
+
+.nadir_button--outlined {
+  background-color: transparent;
+  color: var(--nadir-button-bg);
+  border-color: var(--nadir-button-bg);
+}
+
+.nadir_button--outlined:hover {
+  background-color: var(--nadir-button-bg-hover-light);
+}
+
+.nadir_button--text {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--nadir-button-bg);
+}
+
+.nadir_button--text:hover {
+  background-color: var(--nadir-button-bg-hover-light);
+}
