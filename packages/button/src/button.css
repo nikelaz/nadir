@@ -10,6 +10,8 @@
   --nadir-button-bg: hsl(225, 100%, 40%);
   --nadir-button-bg-disabled: hsl(0, 0%, 35%);
   --nadir-button-bg-hover: hsl(225, 100%, 30%);
+  --nadir-button-bg-hover-dark: hsl(225, 100%, 25%);
+  --nadir-button-bg-hover-light-dark: hsl(225, 100%, 95%);
   --nadir-button-bg-hover-light: hsl(225, 100%, 97%);
   --nadir-button-color: #fff;
   --nadir-button-sm-font-size: 0.75rem;
@@ -22,6 +24,7 @@
 /* 1. Default */
 .nadir_button {
   --nadir-button-font-size: var(--nadir-button-md-font-size);
+  height: fit-content;
   padding: var(--nadir-button-padding);
   font-size: var(--nadir-button-font-size);
   background-color: var(--nadir-button-bg);
@@ -33,17 +36,17 @@
 }
 
 /* 1.1. Default States */
-.nadir_button:hover {
+.nadir_button[data-hovered] {
   background-color: var(--nadir-button-bg-hover);
   border-color: var(--nadir-button-bg-hover);
 }
 
-.nadir_button:active {
-  background-color: var(--nadir-button-bg);
-  border-color: var(--nadir-button-bg);
+.nadir_button[data-pressed] {
+  background-color: var(--nadir-button-bg-hover-dark);
+  border-color: var(--nadir-button-bg-hover-dark);
 }
 
-.nadir_button:focus-visible {
+.nadir_button[data-focus-visible] {
   outline: 2px solid var(--nadir-focus-border-color);
 }
 
@@ -81,13 +84,13 @@
 }
 
 /* 3.2.1. Outlined States */
-.nadir_button--outlined:hover {
+.nadir_button--outlined[data-hovered] {
   background-color: var(--nadir-button-bg-hover-light);
   color: var(--nadir-button-bg-hover);
 }
 
-.nadir_button--outlined:active {
-  background-color: transparent;
+.nadir_button--outlined[data-pressed] {
+  background-color: var(--nadir-button-bg-hover-light-dark);
   color: var(--nadir-button-bg);
 }
 
@@ -105,15 +108,15 @@
 }
 
 /* 3.3.1. Text States */
-.nadir_button--text:hover {
+.nadir_button--text[data-hovered] {
   background-color: var(--nadir-button-bg-hover-light);
   border-color: var(--nadir-button-bg-hover-light);
   color: var(--nadir-button-bg-hover);
 }
 
-.nadir_button--text:active {
-  background-color: transparent;
-  border-color: transparent;
+.nadir_button--text[data-pressed] {
+  background-color: var(--nadir-button-bg-hover-light-dark);
+  background-color: var(--nadir-button-bg-hover-light-dark);
   color: var(--nadir-button-bg);
 }
 

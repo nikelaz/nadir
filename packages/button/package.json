@@ -10,8 +10,8 @@
   "description": "",
   "dependencies": {
     "@nadir-ui/common": "file:../common",
-    "@react-aria/button": "3.12.1",
-    "clsx": "2.1.1"
+    "clsx": "2.1.1",
+    "react-aria": "^3.38.1"
   },
   "peerDependencies": {
     "react": ">=19.0.0"
