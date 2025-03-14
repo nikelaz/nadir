@@ -1,0 +1,36 @@
+/* Variables */
+:root {
+  --nadir-heading-font-weight: bold;
+}
+
+/* 1. Default */
+.nadir_heading {
+  margin: 0;
+  padding: 0;
+  font-weight: var(--nadir-heading-font-weight);
+  text-box: trim-both cap alphabetic;
+}
+
+.nadir_heading--1 {
+  font-size: var(--nadir-font-size-5xl);
+}
+
+.nadir_heading--2 {
+  font-size: var(--nadir-font-size-4xl);
+}
+
+.nadir_heading--3 {
+  font-size: var(--nadir-font-size-3xl);
+}
+
+.nadir_heading--4 {
+  font-size: var(--nadir-font-size-2xl);
+}
+
+.nadir_heading--5 {
+  font-size: var(--nadir-font-size-xl);
+}
+
+.nadir_heading--6 {
+  font-size: var(--nadir-font-size-lg);
+}
