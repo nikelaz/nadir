@@ -5,8 +5,10 @@
   --nadir-space-xl: 5px;
   --nadir-space-sm: 10px;
   --nadir-space-md: 20px;
+  --nadir-focus-border-color: hsl(0, 0%, 70%);
 
   --nadir-button-bg: hsl(225, 100%, 40%);
+  --nadir-button-bg-disabled: hsl(0, 0%, 35%);
   --nadir-button-bg-hover: hsl(225, 100%, 30%);
   --nadir-button-bg-hover-light: hsl(225, 100%, 97%);
   --nadir-button-color: #fff;
@@ -17,7 +19,7 @@
   --nadir-button-padding: 0.625em 1.25em;
 }
 
-/* Defaults */
+/* 1. Default */
 .nadir_button {
   --nadir-button-font-size: var(--nadir-button-md-font-size);
   padding: var(--nadir-button-padding);
@@ -27,13 +29,31 @@
   border: 2px solid var(--nadir-button-bg);
   border-radius: var(--nadir-round-md);
   transition: var(--nadir-transition-normal) background-color, var(--nadir-transition-normal) border-color;
+  text-box: trim-both cap alphabetic;
 }
 
+/* 1.1. Default States */
 .nadir_button:hover {
   background-color: var(--nadir-button-bg-hover);
+  border-color: var(--nadir-button-bg-hover);
 }
 
-/* Sizes */
+.nadir_button:active {
+  background-color: var(--nadir-button-bg);
+  border-color: var(--nadir-button-bg);
+}
+
+.nadir_button:focus-visible {
+  outline: 2px solid var(--nadir-focus-border-color);
+}
+
+.nadir_button[disabled] {
+  cursor: not-allowed;
+  background-color: var(--nadir-button-bg-disabled);
+  border-color: var(--nadir-button-bg-disabled);
+}
+
+/* 2. Sizes */
 .nadir_button--sm {
   --nadir-button-font-size: var(--nadir-button-sm-font-size);
 }
@@ -46,27 +66,59 @@
   --nadir-button-font-size: var(--nadir-button-xl-font-size);
 }
 
-/* Variants */
+/* 3. Variants */
+
+/* 3.1. Pill */
 .nadir_button--pill {
-  border-radius: 99rem;
+  border-radius: 99em;
 }
 
+/* 3.2. Outlined */
 .nadir_button--outlined {
   background-color: transparent;
   color: var(--nadir-button-bg);
   border-color: var(--nadir-button-bg);
 }
 
+/* 3.2.1. Outlined States */
 .nadir_button--outlined:hover {
   background-color: var(--nadir-button-bg-hover-light);
+  color: var(--nadir-button-bg-hover);
 }
 
+.nadir_button--outlined:active {
+  background-color: transparent;
+  color: var(--nadir-button-bg);
+}
+
+.nadir_button--outlined[disabled] {
+  background-color: transparent;
+  border-color: var(--nadir-button-bg-disabled);
+  color: var(--nadir-button-bg-disabled);
+}
+
+/* 3.3. Text */
 .nadir_button--text {
   background-color: transparent;
   border-color: transparent;
   color: var(--nadir-button-bg);
 }
 
+/* 3.3.1. Text States */
 .nadir_button--text:hover {
   background-color: var(--nadir-button-bg-hover-light);
+  border-color: var(--nadir-button-bg-hover-light);
+  color: var(--nadir-button-bg-hover);
+}
+
+.nadir_button--text:active {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--nadir-button-bg);
+}
+
+.nadir_button--text[disabled] {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--nadir-button-bg-disabled);
 }
