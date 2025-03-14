@@ -1,8 +1,9 @@
 import { MainLayout } from '../layouts/main';
+import { Heading } from '@nadir-ui/typography';
 
 const Index = () => (
   <MainLayout>
-    <h1>Nadir UI</h1>
+    <Heading level={1}>Nadir UI</Heading>
   </MainLayout>
 );
 

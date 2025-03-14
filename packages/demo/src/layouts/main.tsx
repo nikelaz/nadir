@@ -6,6 +6,7 @@ export const MainLayout = (props: any) => (
       <Link to="/">Index</Link>
       <div>Components</div>
       <Link to="/buttons">Buttons</Link>
+      <Link to="/typography">Typography</Link>
     </aside>
     <main>
       {props.children}

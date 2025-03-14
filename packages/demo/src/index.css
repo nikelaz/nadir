@@ -20,13 +20,13 @@ aside {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 300px;
+  min-width: 300px;
   padding: 30px;
   flex-shrink: 0;
   background-color: #e5e5e5;
 }
 
 main {
-  padding: 30px;
+  padding: 30px 60px;
   flex-grow: 1;
 }

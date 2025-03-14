@@ -5,6 +5,7 @@ import './index.css';
 
 import Index from './pages/index';
 import Buttons from './pages/buttons';
+import Typography from './pages/typography';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -12,6 +13,7 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/buttons" element={<Buttons />} />
+        <Route path="/typography" element={<Typography />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
