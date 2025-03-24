@@ -1,13 +1,14 @@
-mod partial;
+mod file_manager;
 
 use std::fs;
 use regex::Regex;
-use partial::Partial;
 use std::collections::HashMap;
+use crate::file_manager::FileManager;
 
 fn main() {
   println!("Hello, world!");
 
+  /*
   let index = fs::read_to_string("example/index.html").unwrap();
   let partial = fs::read_to_string("example/index.partial.html").unwrap();
 
@@ -16,7 +17,8 @@ fn main() {
   let partial = Partial::new(partial.as_str()).unwrap();
 
   println!("{:?}", partials);
-
+*/
+  FileManager::read_html_files();
   /*
   let index = replace_slot_tags(index.as_str(), my_replacement_fn);
 
