@@ -1,36 +1,34 @@
-use scraper::Html;
-use scraper::Selector;
+use scraper::{Html, Selector};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Partial {
   pub id: String,
   pub html: String,
+  pub fragment: Html,
 }
 
 impl Partial {
-  pub fn find_partials(raw_html: &str) -> Vec<Self> {
-    let re = Regex::new(r#"(?s)<template\s+[^>]*?data-partial="[^"]*".*?>.*?</template>"#).unwrap();
-    
-    re.captures_iter(raw_html)
-      .map(|cap| Partial::new(&cap[0]).unwrap())
-      .collect()
+  pub fn new(id: &str, html: &str) -> Self {
+    return Partial {
+      id: id.to_string(),
+      html: html.to_string(),
+      fragment: Html::parse_fragment(html)
+    };
   }
 
-  fn parse(raw_html: &str) -> Option<(String, String)> {
-    let re = Regex::new(r#"(?s)<template(?:\s+[^>]*?\bdata-partial="([^"]*)")?[^>]*>(.*?)<\/template>"#).unwrap();
-    
-    if let Some(caps) = re.captures(raw_html) {
-      let id = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default(); 
-      let content = caps.get(2).map(|m| m.as_str().to_string()).unwrap_or_default();
-      return Some((id, content));
+  pub fn parse_partials(raw_html: &str) -> Vec<Self> {
+    let fragment = Html::parse_fragment(raw_html);
+    let template_sel = Selector::parse("template[data-partial]").unwrap();
+    let mut partials: Vec<Self> = Vec::new();
+
+    for element in fragment.select(&template_sel) {
+      if let Some(partial_name) = element.value().attr("data-partial") {
+        let partial = Partial::new(partial_name, element.inner_html().as_str());
+        partials.push(partial);
+      }
     }
-    
-    return None;
-  }
 
-  pub fn new(raw_html: &str) -> Option<Self> {
-    let (id, html) = Partial::parse(raw_html)?;
-    return Some(Partial { id, html });
+    return partials;
   }
 }
 
