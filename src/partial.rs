@@ -1,4 +1,5 @@
-use regex::Regex;
+use scraper::Html;
+use scraper::Selector;
 
 #[derive(Debug)]
 pub struct Partial {
@@ -7,11 +8,11 @@ pub struct Partial {
 }
 
 impl Partial {
-  fn find_partials(raw_html: &str) -> Option<Vec<String>> {
-    let re = Regex::new(r#"(?s)<template\s+[^>]*?\bdata-partial="[^"]*".*?>.*?<\/template>)"#).unwrap();
+  pub fn find_partials(raw_html: &str) -> Vec<Self> {
+    let re = Regex::new(r#"(?s)<template\s+[^>]*?data-partial="[^"]*".*?>.*?</template>"#).unwrap();
     
-    re.captures_iter(html)
-      .map(|cap| cap[0].to_string())
+    re.captures_iter(raw_html)
+      .map(|cap| Partial::new(&cap[0]).unwrap())
       .collect()
   }
 
