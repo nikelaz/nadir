@@ -45,28 +45,32 @@ impl FileManager {
 
   pub fn save_output_files(input_dir: &str, output_dir: &str, pages: &Vec<Page>, other_paths: &Vec<String>) {
     for page in pages {
-      let path = canonicalize(page.path.clone().replace(input_dir, output_dir))
-        .expect("Failed to resolve output directory path");
+      let path = page.path.clone().replace(input_dir, output_dir);
         
       // Get the parent directory and create it if it doesn't exist
-      if let Some(parent) = path.parent() {
+      if let Some(parent) = Path::new(&path).parent() {
         fs::create_dir_all(parent)
           .expect("Error creating directory");
       }
-    
+
+      let path = canonicalize(page.path.clone().replace(input_dir, output_dir))
+        .expect("Failed to resolve output directory path");
+
       let _ = fs::write(&path, page.html.clone());
       println!("{} {}", "Creating Page:".cyan(), path.display());
     }
 
     for old_other_path in other_paths {
-      let new_other_path = canonicalize(old_other_path.clone().replace(input_dir, output_dir))
-        .expect("Failed to resolve output directory path");
-      
+      let new_other_path = old_other_path.clone().replace(input_dir, output_dir);
+
       // Get the parent directory and create it if it doesn't exist
       if let Some(parent) = Path::new(&old_other_path).parent() {
         fs::create_dir_all(parent)
           .expect("Error creating directory");
       }
+      
+      let new_other_path = canonicalize(old_other_path.clone().replace(input_dir, output_dir))
+        .expect("Failed to resolve output directory path");
 
       let _ = fs::copy(old_other_path, &new_other_path);
       
