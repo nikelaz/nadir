@@ -7,7 +7,6 @@ edition = "2024"
 readme = "README.md"
 repository = "https://github.com/nikelaz/nadir"
 license = "MIT"
-keywords = ["site builder", "static site", "web builder", "template engine"]
 categories = ["command-line-utilities", "web-programming", "development-tools"]
 exclude = [
   "example/*",

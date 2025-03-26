@@ -81,15 +81,16 @@ impl Application {
     println!("{} {}", "Output Dir:".cyan(), self.config.output_dir);
 
     println!("{}", "Loading Files...".cyan());
-    let (page_paths, partial_paths) = FileManager::find_file_paths(&self.config.input_dir);
+    let (page_paths, partial_paths, other_paths) = FileManager::find_file_paths(&self.config.input_dir);
 
     println!("{} {}", "Pages:".cyan(), page_paths.len());
     println!("{} {}", "Partials:".cyan(), partial_paths.len());
+    println!("{} {}", "Other Files:".cyan(), other_paths.len());
 
     self.load_pages(&page_paths); 
     self.load_partials(&partial_paths);
     self.insert_partials();
-    FileManager::save_output_files(&self.config.input_dir, &self.config.output_dir, &self.pages);
+    FileManager::save_output_files(&self.config.input_dir, &self.config.output_dir, &self.pages, &other_paths);
   }
 }
 
