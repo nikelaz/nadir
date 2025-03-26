@@ -53,7 +53,7 @@ impl FileManager {
           .expect("Error creating directory");
       }
 
-      let path = canonicalize(page.path.clone().replace(input_dir, output_dir))
+      let path = canonicalize(path)
         .expect("Failed to resolve output directory path");
 
       let _ = fs::write(&path, page.html.clone());
@@ -64,12 +64,12 @@ impl FileManager {
       let new_other_path = old_other_path.clone().replace(input_dir, output_dir);
 
       // Get the parent directory and create it if it doesn't exist
-      if let Some(parent) = Path::new(&old_other_path).parent() {
+      if let Some(parent) = Path::new(&new_other_path).parent() {
         fs::create_dir_all(parent)
           .expect("Error creating directory");
       }
       
-      let new_other_path = canonicalize(old_other_path.clone().replace(input_dir, output_dir))
+      let new_other_path = canonicalize(new_other_path)
         .expect("Failed to resolve output directory path");
 
       let _ = fs::copy(old_other_path, &new_other_path);
