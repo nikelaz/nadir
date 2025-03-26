@@ -6,9 +6,9 @@ Static site builder focused on simplicity.
 
 This project is in **early development**. Currently it supports:
 
-[x] - Partials
-[ ] - Templates
-[ ] - Dev Mode (Watcher)
+- [x] Partials
+- [ ] Templates
+- [ ] Dev Mode (Watcher)
 
 ## Installation
 
