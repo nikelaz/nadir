@@ -1,7 +1,14 @@
 [package]
 name = "nadir"
+description = "A static site builder focused on simplicity"
 version = "0.1.0"
+authors = ["Nikola Lazarov <nikola.n.lazarov@outlook.com>"]
 edition = "2024"
+readme = "README.md"
+repository = "https://github.com/nikelaz/nadir"
+license = "MIT"
+keywords = ["site builder", "static site", "web builder", "template engine"]
+categories = ["command-line-utilities", "web-programming", "development-tools"]
 
 [dependencies]
 walkdir = "2.5.0"
