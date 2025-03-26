@@ -1,5 +1,8 @@
 use std::fs;
+use std::path::Path;
 use walkdir::WalkDir;
+use colored::Colorize;
+use crate::page::Page;
 
 pub struct FileManager;
 
@@ -15,16 +18,43 @@ impl FileManager {
         let extension = path.extension().unwrap_or_default().to_string_lossy();
 
         if extension == "html" && filename.contains("partial") {
-          partial_paths.push(path.display().to_string().replace("\\", "/"));
+          let partial_path = path
+            .to_str()
+            .expect("Error parsing one of the partial paths. Check your file names for special symbols.")
+            .to_string();
+           
+          partial_paths.push(partial_path);
+
+          continue;
         }
 
-        if extension == "html" && !filename.contains("partial") {
-          page_paths.push(path.display().to_string().replace("\\", "/"));
+        if extension == "html" {
+          let page_path = path
+            .to_str()
+            .expect("Error parsing one of the page paths. Check your file names for special symbols.")
+            .to_string();
+
+          page_paths.push(page_path);
         }
       }
     }
-
+    
     return (page_paths, partial_paths);
+  }
+
+  pub fn save_output_files(input_dir: &str, output_dir: &str, pages: &Vec<Page>) {
+    for page in pages {
+      let path = page.path.clone().replace(input_dir, output_dir);
+      
+      // Get the parent directory and create it if it doesn't exist
+      if let Some(parent) = Path::new(&path).parent() {
+        fs::create_dir_all(parent)
+          .expect("Error creating directory");
+      }
+    
+      let _ = fs::write(&path, page.html.clone());
+      println!("{} {}", "Creating Page:".cyan(), path);
+    }
   }
 }
 

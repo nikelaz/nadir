@@ -4,7 +4,6 @@ use scraper::{Html, Selector};
 pub struct Partial {
   pub id: String,
   pub html: String,
-  pub fragment: Html,
 }
 
 impl Partial {
@@ -12,13 +11,14 @@ impl Partial {
     return Partial {
       id: id.to_string(),
       html: html.to_string(),
-      fragment: Html::parse_fragment(html)
     };
   }
 
   pub fn parse_partials(raw_html: &str) -> Vec<Self> {
     let fragment = Html::parse_fragment(raw_html);
-    let template_sel = Selector::parse("template[data-partial]").unwrap();
+    let template_sel = Selector::parse("template[data-partial]")
+      .expect("Internal Error: Could not parse slot selector");
+
     let mut partials: Vec<Self> = Vec::new();
 
     for element in fragment.select(&template_sel) {

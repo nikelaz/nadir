@@ -2,9 +2,9 @@ mod file_manager;
 mod application;
 mod page;
 mod partial;
+mod config;
+mod html_utils;
 
-use scraper::{Html, Selector};
-use std::collections::HashMap;
 use crate::application::Application;
 
 fn main() {
