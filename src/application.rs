@@ -7,6 +7,7 @@ use crate::page::Page;
 use crate::partial::Partial;
 use crate::config::Config;
 use crate::html_utils::HTMLUtils;
+use dunce::canonicalize;
 
 #[derive(Debug)]
 pub struct Application {
@@ -28,9 +29,12 @@ impl Application {
 
   fn load_pages(&mut self, page_paths: &Vec<String>) {
     for page_path in page_paths {
-      let html = match fs::read_to_string(page_path) {
+      let path = canonicalize(page_path)
+        .expect("Could not parse page path");
+
+      let html = match fs::read_to_string(&path) {
         Ok(res) => res,
-        Err(err) => panic!("Error reading page {}: {}", page_path, err),
+        Err(err) => panic!("Error reading page {}: {}", path.display(), err),
       };
 
       let page = Page::new(page_path, html.as_str());
@@ -40,9 +44,12 @@ impl Application {
 
   fn load_partials(&mut self, partial_paths: &Vec<String>) {
     for partial_path in partial_paths {
-      let html = match fs::read_to_string(partial_path) {
+      let path = canonicalize(partial_path)
+        .expect("Could not parse partial path");
+    
+      let html = match fs::read_to_string(&path) {
         Ok(res) => res,
-        Err(err) => panic!("Error reading partial {}: {}", partial_path, err),
+        Err(err) => panic!("Error reading partial {}: {}", path.display(), err),
       };
       let partials = Partial::parse_partials(html.as_str());
       for partial in &partials {

@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 use serde_json::Value;
+use dunce::canonicalize;
 
 #[derive(Debug)]
 pub struct Config {
@@ -8,10 +9,15 @@ pub struct Config {
   pub output_dir: String,
 }
 
+const CONFIG_NOT_FOUND_ERR: &str = "Could not find a config file. Nadir expects a \"nadir.config.json\" file in the root directory";
+
 impl Config {
   pub fn load() -> Self {
-    let config_file_contents = fs::read_to_string("example/nadir.config.json")
-      .expect("Could not find a config file. Nadir expects a \"nadir.config.json\" file in the root directory");
+    let path = canonicalize("./nadir.config.json")
+      .expect(CONFIG_NOT_FOUND_ERR);
+
+    let config_file_contents = fs::read_to_string(path)
+      .expect(CONFIG_NOT_FOUND_ERR);
 
     let v: Value = serde_json::from_str(&config_file_contents)    
       .expect("Could not parse the config file. JSON syntax error");
@@ -27,3 +33,4 @@ impl Config {
     Config { input_dir, output_dir }
   }
 }
+
