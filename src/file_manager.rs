@@ -55,6 +55,12 @@ impl FileManager {
     let normalized_input_dir = Self::normalize_path(&input_dir);
     let normalized_output_dir = Self::normalize_path(&output_dir);
 
+    // remove output directory if it already exists
+    if Path::new(&normalized_output_dir).exists() {
+      fs::remove_dir_all(&normalized_output_dir)
+        .expect("Could not remove the existing output directory");
+    }
+
     for page in pages {
       let path = Self::normalize_path(&page.path.clone())
         .replace(&normalized_input_dir, &normalized_output_dir);
