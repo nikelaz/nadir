@@ -4,10 +4,18 @@ use walkdir::WalkDir;
 use colored::Colorize;
 use crate::page::Page;
 use dunce::canonicalize;
+use std::env;
 
 pub struct FileManager;
 
 impl FileManager {
+  fn normalize_path(path: &str) -> String {
+    if env::consts::OS == "windows" {
+      return path.replace("/", "\\");
+    }
+    return path.replace("\\", "/");
+  }
+
   pub fn find_file_paths(dir: &str) -> (Vec<String>, Vec<String>, Vec<String>) {
     let dir_path = canonicalize(dir)
       .expect("Failed to resolve input directory path");
@@ -44,37 +52,34 @@ impl FileManager {
   }
 
   pub fn save_output_files(input_dir: &str, output_dir: &str, pages: &Vec<Page>, other_paths: &Vec<String>) {
+    let normalized_input_dir = Self::normalize_path(&input_dir);
+    let normalized_output_dir = Self::normalize_path(&output_dir);
+
     for page in pages {
-      let path = page.path.clone().replace(input_dir, output_dir);
+      let path = Self::normalize_path(&page.path.clone())
+        .replace(&normalized_input_dir, &normalized_output_dir);
         
-      // Get the parent directory and create it if it doesn't exist
       if let Some(parent) = Path::new(&path).parent() {
         fs::create_dir_all(parent)
           .expect("Error creating directory");
       }
 
-      let path = canonicalize(path)
-        .expect("Failed to resolve output directory path");
-
       let _ = fs::write(&path, page.html.clone());
-      println!("{} {}", "Creating Page:".cyan(), path.display());
+      println!("{} {}", "Creating Page:".cyan(), path);
     }
 
     for old_other_path in other_paths {
-      let new_other_path = old_other_path.clone().replace(input_dir, output_dir);
+      let new_other_path = Self::normalize_path(&old_other_path.clone())
+        .replace(&normalized_input_dir, &normalized_output_dir);
 
-      // Get the parent directory and create it if it doesn't exist
       if let Some(parent) = Path::new(&new_other_path).parent() {
         fs::create_dir_all(parent)
           .expect("Error creating directory");
       }
       
-      let new_other_path = canonicalize(new_other_path)
-        .expect("Failed to resolve output directory path");
-
-      let _ = fs::copy(old_other_path, &new_other_path);
+      let _ = fs::copy(Self::normalize_path(&old_other_path), &new_other_path);
       
-      println!("{} {}", "Copying:".cyan(), new_other_path.display());
+      println!("{} {}", "Copying:".cyan(), new_other_path);
     }
   }
 }
