@@ -37,3 +37,10 @@
 - VStack
 - ZStack
 
+### 5. Color
+
+- Text
+- Background
+- Border
+- Shadow
+- Accent
