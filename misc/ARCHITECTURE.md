@@ -44,3 +44,9 @@
 - Border
 - Shadow
 - Accent
+
+#### 5.1. Color Tokens
+
+- Primary
+- Accent
+- Gray0-9
