@@ -8,9 +8,9 @@ fn size_to_space(input: Size) -> String {
         Size::XXXS => to_em(0.1),
         Size::XXS  => to_em(0.25),
         Size::XS   => to_em(0.5),
-        Size::S    => to_em(0.75),
-        Size::M    => to_em(1.0),
-        Size::L    => to_em(1.25),
+        Size::SM   => to_em(0.75),
+        Size::MD   => to_em(1.0),
+        Size::LG   => to_em(1.25),
         Size::XL   => to_em(1.5),
         Size::XXL  => to_em(1.75),
         Size::XXXL => to_em(2.0),
@@ -84,6 +84,51 @@ pub fn generate() -> String {
                 dedent(rule.as_str()).as_str()
             );
         }
+    }
+
+    // gap-<size>
+    for size in Size::ALL {
+        let rule = format!(r#"
+                .gap-{} {{
+                    gap: {};
+                }}
+            "#,
+            size.as_str(),
+            size_to_space(size)
+        );
+        content.push_str(
+            dedent(rule.as_str()).as_str()
+        );
+    }
+
+    // gap-x-<size>
+    for size in Size::ALL {
+        let rule = format!(r#"
+                .gap-x-{} {{
+                    row-gap: {};
+                }}
+            "#,
+            size.as_str(),
+            size_to_space(size)
+        );
+        content.push_str(
+            dedent(rule.as_str()).as_str()
+        );
+    }
+
+    // gap-y-<size>
+    for size in Size::ALL {
+        let rule = format!(r#"
+                .gap-y-{} {{
+                    col-gap: {};
+                }}
+            "#,
+            size.as_str(),
+            size_to_space(size)
+        );
+        content.push_str(
+            dedent(rule.as_str()).as_str()
+        );
     }
 
     return content;
