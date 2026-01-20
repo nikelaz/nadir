@@ -1,7 +1,7 @@
 use std::time::Instant;
-use std::fs::{self, File};
-use std::io::{self, Write};
-use helpers::minify_css;
+use std::fs;
+use std::io;
+use helpers::{minify_css, save_text_file};
 
 mod helpers;
 mod size;
@@ -21,15 +21,25 @@ fn main() -> io::Result<()> {
     let spacing_css = spacing::generate();
     bundle_css.push_str(spacing_css.as_str());
 
-    let dest_file_path = format!("{}/nadir.css", DIST_DIR);
-    let mut file = File::create(&dest_file_path)?;
-    file.write_all(bundle_css.trim().as_bytes())?;
-    println!("Created: {}", dest_file_path);
+    match save_text_file(DIST_DIR, "nadir-spacing.css", spacing_css.trim()) {
+        Ok(file_size) => println!("Created: nadir-spacing.css ({} bytes)", file_size),
+        Err(err) => eprintln!("Error: Could not create the nadir-spacing.css file:\n{}", err)
+    }
 
-    let dest_file_path_min = format!("{}/nadir.min.css", DIST_DIR);
-    let mut file_min = File::create(&dest_file_path_min)?;
-    file_min.write_all(minify_css(bundle_css.trim()).as_bytes())?;
-    println!("Created: {}", dest_file_path_min);
+    match save_text_file(DIST_DIR, "nadir-spacing.min.css", minify_css(spacing_css.trim()).as_str()) {
+        Ok(file_size) => println!("Created: nadir-spacing.min.css ({} bytes)", file_size),
+        Err(err) => eprintln!("Error: Could not create the nadir-spacing.min.css file:\n{}", err)
+    }
+
+    match save_text_file(DIST_DIR, "nadir.css", bundle_css.trim()) {
+        Ok(file_size) => println!("Created: nadir.css ({} bytes)", file_size),
+        Err(err) => eprintln!("Error: Could not create the nadir.css file:\n{}", err)
+    }
+
+    match save_text_file(DIST_DIR, "nadir.min.css", minify_css(bundle_css.trim()).as_str()) {
+        Ok(file_size) => println!("Created: nadir.min.css ({} bytes)", file_size),
+        Err(err) => eprintln!("Error: Could not create the nadir.min.css file:\n{}", err)
+    }
 
     let elapsed = start.elapsed();
     println!("Execution time: {:.2?}", elapsed);
