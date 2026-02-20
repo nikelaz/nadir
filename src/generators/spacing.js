@@ -1,14 +1,10 @@
-import { SIZES, DIRECTIONS } from '../config.js';
+import { DIRECTIONS, SIZES } from '../config.js';
 
-export default function generateSpacing() {
+const generateMargin = function generateMargin() {
     let css = '';
-
-    // .margin-<size>
     for (const size of SIZES) {
         css += `.margin-${size.name} { margin: ${size.rem}rem; }\n`;
     }
-
-    // .margin-<direction>-<size>
     for (const direction of DIRECTIONS) {
         for (const size of SIZES) {
             if (direction === 'x') {
@@ -20,13 +16,14 @@ export default function generateSpacing() {
             }
         }
     }
+    return css;
+};
 
-    // .padding-<size>
+const generatePadding = function generatePadding() {
+    let css = '';
     for (const size of SIZES) {
         css += `.padding-${size.name} { padding: ${size.rem}rem; }\n`;
     }
-
-    // .padding-<direction>-<size>
     for (const direction of DIRECTIONS) {
         for (const size of SIZES) {
             if (direction === 'x') {
@@ -38,21 +35,25 @@ export default function generateSpacing() {
             }
         }
     }
+    return css;
+};
 
-    // .gap-<size>
+const generateGap = function generateGap() {
+    let css = '';
     for (const size of SIZES) {
         css += `.gap-${size.name} { gap: ${size.rem}rem; }\n`;
     }
-
-    // .gap-x-<size>
     for (const size of SIZES) {
         css += `.gap-x-${size.name} { column-gap: ${size.rem}rem; }\n`;
     }
-
-    // .gap-y-<size>
     for (const size of SIZES) {
         css += `.gap-y-${size.name} { row-gap: ${size.rem}rem; }\n`;
     }
-
     return css;
-}
+};
+
+const generateSpacing = function generateSpacing() {
+    return generateMargin() + generatePadding() + generateGap();
+};
+
+export default generateSpacing;

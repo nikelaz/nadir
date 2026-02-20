@@ -3,7 +3,7 @@ import { SIZES } from '../config.js';
 export default function generateRoundness() {
   let css = '';
 
-  // round-none, round-full
+  // Round-none, round-full
   css += `.round-none { border-radius: 0px; }\n`;
   css += `.round-full { border-radius: 9999px; }\n`;
   css += `.round-circle { border-radius: 50%; }\n`;

@@ -1,25 +1,32 @@
 {
   "name": "nadir",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Nadir is a library of utility classes that allow you to build user interfaces. Unlike large utility libraries like tailwind, Nadir doesn't attempt to provide utilities for every possible CSS property. Instead it provides a system of classes that allow you to build most user interfaces with a powerful and minimal system of primitives.",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "build": "node src/build.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test",
+    "lint": "eslint ."
   },
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nikelaz/nadir.git"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/nikelaz/nadir/issues"
   },
   "homepage": "https://github.com/nikelaz/nadir#readme",
   "devDependencies": {
-    "lightningcss": "^1.31.1"
+    "@eslint/js": "10.0.1",
+    "eslint": "10.0.0",
+    "globals": "17.3.0",
+    "lightningcss": "1.31.1"
   }
 }

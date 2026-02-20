@@ -1,6 +1,6 @@
 import { transform } from 'lightningcss';
 
-export function minifyCss(cssString) {
+export const minifyCss = function minifyCss(cssString) {
     try {
         const { code } = transform({
             code: Buffer.from(cssString),
@@ -8,8 +8,8 @@ export function minifyCss(cssString) {
             sourceMap: false
         });
         return code.toString();
-    } catch (e) {
-        console.error("Error minifying CSS:", e);
-        throw e;
+    } catch (err) {
+        process.stdout.write(`Error minifying CSS: ${String(err)}\n`);
+        throw err;
     }
-}
+};

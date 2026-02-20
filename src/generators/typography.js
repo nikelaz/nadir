@@ -1,44 +1,45 @@
-import { FONT_FAMILIES, FONT_WEIGHTS, SIZES, LINE_HEIGHTS, LETTER_SPACINGS } from '../config.js';
+import { FONT_FAMILIES, FONT_WEIGHTS, LETTER_SPACINGS, LINE_HEIGHTS, SIZES } from '../config.js';
 
-export default function generateTypography() {
+const generateFontClasses = function generateFontClasses() {
     let css = '';
-
-    // font-<family>
     for (const family of FONT_FAMILIES) {
         css += `.font-${family.name} { font-family: ${family.value}; }\n`;
     }
-
-    // font-<size>
     for (const size of SIZES) {
         css += `.font-${size.name} { font-size: ${size.rem}rem; }\n`;
     }
-
-    // font-<weight>
     for (const weight of FONT_WEIGHTS) {
         css += `.font-${weight.name} { font-weight: ${weight.value}; }\n`;
     }
+    return css;
+};
 
-    // leading-<size> (line-height)
-    for (const lh of LINE_HEIGHTS) {
-        css += `.leading-${lh.name} { line-height: ${lh.value}; }\n`;
+const generateTextSpacing = function generateTextSpacing() {
+    let css = '';
+    for (const lineHeight of LINE_HEIGHTS) {
+        css += `.leading-${lineHeight.name} { line-height: ${lineHeight.value}; }\n`;
     }
-
-    // tracking-<size> (letter-spacing)
-    for (const ls of LETTER_SPACINGS) {
-        css += `.tracking-${ls.name} { letter-spacing: ${ls.value}; }\n`;
+    for (const letterSpacing of LETTER_SPACINGS) {
+        css += `.tracking-${letterSpacing.name} { letter-spacing: ${letterSpacing.value}; }\n`;
     }
+    return css;
+};
 
-    // text-align
+const generateTextAlignTransform = function generateTextAlignTransform() {
+    let css = '';
     const alignments = ['left', 'center', 'right', 'justify', 'start', 'end'];
     for (const align of alignments) {
         css += `.text-${align} { text-align: ${align}; }\n`;
     }
-
-    // text-transform
     const transforms = ['uppercase', 'lowercase', 'capitalize', 'none'];
     for (const transform of transforms) {
         css += `.text-${transform} { text-transform: ${transform}; }\n`;
     }
-
     return css;
-}
+};
+
+const generateTypography = function generateTypography() {
+    return generateFontClasses() + generateTextSpacing() + generateTextAlignTransform();
+};
+
+export default generateTypography;
