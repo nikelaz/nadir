@@ -1,6 +1,6 @@
 {
   "name": "@nikelaz/nadir",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Nadir is a library of utility classes that allow you to build user interfaces. Unlike large utility libraries like tailwind, Nadir doesn't attempt to provide utilities for every possible CSS property. Instead it provides a system of classes that allow you to build most user interfaces with a powerful and minimal system of primitives.",
   "main": "index.js",
   "type": "module",
