@@ -1,0 +1,45 @@
+.shadow-none {
+  box-shadow: none;
+}
+
+.shadow-sm {
+  box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow,
+.shadow-md {
+  box-shadow: 3px 3px 5px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-lg {
+  box-shadow: 5px 5px 8px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-xl {
+  box-shadow: 8px 8px 10px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-2xl {
+  box-shadow: 10px 10px 13px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-inner-sm {
+  box-shadow: inset 2px 2px 3px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-inner,
+.shadow-inner-md {
+  box-shadow: inset 3px 3px 5px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-inner-lg {
+  box-shadow: inset 5px 5px 8px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-inner-xl {
+  box-shadow: inset 8px 8px 10px 0 rgba(0, 0, 0, 0.10);
+}
+
+.shadow-inner-2xl {
+  box-shadow: inset 10px 10px 13px 0 rgba(0, 0, 0, 0.10);
+}

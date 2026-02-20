@@ -1,7 +1,0 @@
-[package]
-name = "nadir"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-lightningcss = "1.0.0-alpha.68"
