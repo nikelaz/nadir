@@ -21,7 +21,7 @@ jobs:
       - name: Test
         run: npm test
 
-  publish-gpr:
+  publish:
     name: Build & Publish to GitHub Packages
     needs: test
     runs-on: ubuntu-latest
@@ -35,7 +35,6 @@ jobs:
         with:
           node-version: lts
           registry-url: https://npm.pkg.github.com/
-          scope: '@nikelaz'
       - name: Install Dependencies
         run: npm ci
       - name: Build CSS Bundles
@@ -44,23 +43,3 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
-  publish-npm:
-    name: Build & Publish to NPM
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js LTS
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts
-          registry-url: https://registry.npmjs.org/
-      - name: Install Dependencies
-        run: npm ci
-      - name: Build CSS Bundles
-        run: npm run build
-      - name: Publish to NPM
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
