@@ -24,15 +24,29 @@ export const BUNDLES = [
       { path: 'src/static/layout/wrap.css', type: 'file' },
       { path: 'src/static/layout/display.css', type: 'file' },
       { path: 'src/static/layout/position.css', type: 'file' },
+      { path: 'src/static/layout/sizing.css', type: 'file' },
+      { path: 'src/static/layout/overflow.css', type: 'file' },
+      { path: 'src/static/layout/flex.css', type: 'file' },
+      { path: 'src/static/layout/aspect.css', type: 'file' },
+      { path: 'src/static/layout/object.css', type: 'file' },
+      { path: 'src/static/layout/visibility.css', type: 'file' },
     ],
     name: 'nadir-layout'
   },
   {
     inputs: [
       { name: 'roundness', type: 'generator' },
-      { path: 'src/static/shadow.css', type: 'file' }
+      { path: 'src/static/shadow.css', type: 'file' },
+      { path: 'src/static/border.css', type: 'file' },
+      { name: 'opacity', type: 'generator' },
     ],
     name: 'nadir-decorations'
+  },
+  {
+    inputs: [
+      { path: 'src/static/interactive.css', type: 'file' },
+    ],
+    name: 'nadir-interactive'
   },
   {
     inputs: [
@@ -44,8 +58,17 @@ export const BUNDLES = [
       { path: 'src/static/layout/wrap.css', type: 'file' },
       { path: 'src/static/layout/display.css', type: 'file' },
       { path: 'src/static/layout/position.css', type: 'file' },
+      { path: 'src/static/layout/sizing.css', type: 'file' },
+      { path: 'src/static/layout/overflow.css', type: 'file' },
+      { path: 'src/static/layout/flex.css', type: 'file' },
+      { path: 'src/static/layout/aspect.css', type: 'file' },
+      { path: 'src/static/layout/object.css', type: 'file' },
+      { path: 'src/static/layout/visibility.css', type: 'file' },
       { name: 'roundness', type: 'generator' },
       { path: 'src/static/shadow.css', type: 'file' },
+      { path: 'src/static/border.css', type: 'file' },
+      { name: 'opacity', type: 'generator' },
+      { path: 'src/static/interactive.css', type: 'file' },
     ],
     name: 'nadir'
   },
@@ -79,6 +102,13 @@ export const BUNDLES = [
     { name: 'normal', value: 1.5 },
     { name: 'relaxed', value: 1.625 },
     { name: 'loose', value: 2 },
+  ],
+  OPACITIES = [
+    { name: '0', value: 0 },
+    { name: '25', value: 0.25 },
+    { name: '50', value: 0.5 },
+    { name: '75', value: 0.75 },
+    { name: '100', value: 1 },
   ],
   SIZES = [
     { name: '3xs', rem: 0.1 },

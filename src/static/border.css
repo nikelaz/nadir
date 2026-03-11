@@ -1,0 +1,31 @@
+.border {
+  border: 1px solid currentColor;
+}
+
+.border-2 {
+  border: 2px solid currentColor;
+}
+
+.border-4 {
+  border: 4px solid currentColor;
+}
+
+.border-none {
+  border: none;
+}
+
+.border-top {
+  border-top: 1px solid currentColor;
+}
+
+.border-right {
+  border-right: 1px solid currentColor;
+}
+
+.border-bottom {
+  border-bottom: 1px solid currentColor;
+}
+
+.border-left {
+  border-left: 1px solid currentColor;
+}

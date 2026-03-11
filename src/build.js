@@ -1,5 +1,6 @@
 import { BUNDLES } from './config.js';
 import fs from 'node:fs';
+import generateOpacity from './generators/opacity.js';
 import generateRoundness from './generators/roundness.js';
 import generateSpacing from './generators/spacing.js';
 import generateTypography from './generators/typography.js';
@@ -8,6 +9,7 @@ import path from 'node:path';
 
 const DIST_DIR = path.resolve('dist'),
     generators = {
+        opacity: generateOpacity,
         roundness: generateRoundness,
         spacing: generateSpacing,
         typography: generateTypography,
