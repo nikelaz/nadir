@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
+  base: '/nadir/',
   title: 'Nadir',
   description: 'A minimal, modular CSS utility library for building user interfaces.',
 
