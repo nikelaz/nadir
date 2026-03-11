@@ -17,6 +17,7 @@ export default defineConfig({
         items: [
           { text: 'Getting Started', link: '/guide/getting-started' },
           { text: 'Motivation', link: '/guide/motivation' },
+          { text: 'MCP Server', link: '/guide/mcp' },
         ],
       },
       {
