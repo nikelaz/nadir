@@ -62,13 +62,49 @@ string(SUBSTRING "${IMGUI_MD_SOURCE}" ${TABLE_END} ${IMGUI_MD_SUFFIX_LENGTH} IMG
 set(IMGUI_MD_TABLE [=[void imgui_md::BLOCK_TABLE(const MD_BLOCK_TABLE_DETAIL* detail, bool e)
 {
 	if (e) {
-		ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame;
+		s_imgui_md_table_start = ImGui::GetCursorScreenPos();
+		s_imgui_md_table_width = ImGui::GetContentRegionAvail().x;
+		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(16.0f, 12.0f));
+		ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_PadOuterX;
 		if (m_table_border)
-			flags |= ImGuiTableFlags_Borders;
+			flags |= ImGuiTableFlags_BordersInner;
 		s_imgui_md_table_active = ImGui::BeginTable("##imgui_md_table", detail->col_count, flags);
+		if (!s_imgui_md_table_active)
+			ImGui::PopStyleVar();
 	} else {
-		if (s_imgui_md_table_active)
+		if (s_imgui_md_table_active) {
 			ImGui::EndTable();
+			if (m_table_border) {
+				const ImVec2 cursor = ImGui::GetCursorScreenPos();
+				const float bottom = cursor.y - ImGui::GetStyle().ItemSpacing.y;
+				ImDrawList* draw_list = ImGui::GetWindowDrawList();
+				const ImVec2 top_right(s_imgui_md_table_start.x + s_imgui_md_table_width,
+					s_imgui_md_table_start.y + 6.0f);
+				constexpr float pi = 3.14159265358979323846f;
+				const ImU32 background = ImGui::GetColorU32(ImGuiCol_WindowBg);
+				const ImU32 header = ImGui::GetColorU32(ImGuiCol_TableHeaderBg);
+				draw_list->AddRectFilled(s_imgui_md_table_start,
+					ImVec2(s_imgui_md_table_start.x + 6.0f, top_right.y), background);
+				draw_list->PathClear();
+				draw_list->PathLineTo(ImVec2(s_imgui_md_table_start.x + 6.0f,
+					s_imgui_md_table_start.y + 6.0f));
+				draw_list->PathArcTo(ImVec2(s_imgui_md_table_start.x + 6.0f,
+					s_imgui_md_table_start.y + 6.0f), 6.0f, pi, pi * 1.5f, 8);
+				draw_list->PathFillConvex(header);
+				draw_list->AddRectFilled(ImVec2(top_right.x - 6.0f, s_imgui_md_table_start.y),
+					top_right, background);
+				draw_list->PathClear();
+				draw_list->PathLineTo(ImVec2(top_right.x - 6.0f, top_right.y));
+				draw_list->PathArcTo(ImVec2(top_right.x - 6.0f, top_right.y),
+					6.0f, pi * 1.5f, pi * 2.0f, 8);
+				draw_list->PathFillConvex(header);
+				draw_list->AddRect(
+					s_imgui_md_table_start,
+					ImVec2(s_imgui_md_table_start.x + s_imgui_md_table_width, bottom),
+					ImGui::GetColorU32(ImGuiCol_Border), 6.0f, ImDrawFlags_RoundCornersAll, 1.0f);
+			}
+			ImGui::PopStyleVar();
+		}
 		s_imgui_md_table_active = false;
 	}
 }
@@ -117,7 +153,9 @@ set(IMGUI_MD_CELL [=[void imgui_md::BLOCK_TD(const MD_BLOCK_TD_DETAIL*, bool e)
 set(IMGUI_MD_SOURCE "${IMGUI_MD_PREFIX}${IMGUI_MD_CELL}${IMGUI_MD_SUFFIX}")
 string(REPLACE [=[#include "imgui_md.h"]=]
                [=[#include "imgui_md.h"
-static bool s_imgui_md_table_active = false;]=]
+static bool s_imgui_md_table_active = false;
+static ImVec2 s_imgui_md_table_start;
+static float s_imgui_md_table_width = 0.0f;]=]
                IMGUI_MD_SOURCE "${IMGUI_MD_SOURCE}")
 string(REPLACE [=[void imgui_md::render_text(const char* str, const char* str_end)
 {]=]

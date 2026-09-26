@@ -110,11 +110,13 @@ void render_user_message(const ChatMessage& message) {
     ImGui::SetCursorScreenPos(row_pos);
     ImGui::Dummy(ImVec2(available_width, bubble_height));
 }
+
 }
 
 void render_chat_panel(ApplicationState& state, std::string& message_input, Provider& provider,
                        std::string& selected_model, std::string& selected_reasoning_effort,
-                       const std::string& progress_text, const std::string& progress_conversation_id) {
+                       bool& is_generating, TurnId& active_turn_id, TurnId& next_turn_id,
+                       std::string& progress_text, const std::string& progress_conversation_id) {
     static ChatMarkdown markdown;
     if (!provider.models.empty()) {
         const auto selected = std::find_if(provider.models.begin(), provider.models.end(),
@@ -151,7 +153,9 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
         ImGui::BeginChild("##messages", ImVec2(0.0f, message_height), false);
         const bool was_at_bottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 6.0f));
-        for (const ChatMessage& message : thread.messages) {
+        for (std::size_t message_index = 0; message_index < thread.messages.size(); ++message_index) {
+            const ChatMessage& message = thread.messages[message_index];
+            ImGui::PushID(static_cast<int>(message_index));
             ImGui::BeginGroup();
             if (message.role == ChatMessageRole::User) {
                 render_user_message(message);
@@ -188,6 +192,7 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
                 }
             }
             ImGui::EndGroup();
+            ImGui::PopID();
             ImGui::Dummy(ImVec2(1.0f, 9.0f));
         }
         ImGui::PopStyleVar();
@@ -294,15 +299,27 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
         const ImU32 arrow_color = ImGui::GetColorU32(ImGui::IsItemActive()
             ? ImVec4(0.08f, 0.08f, 0.08f, 1.0f)
             : ImVec4(0.94f, 0.94f, 0.94f, 1.0f));
-        draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y + 6.0f),
-                           ImVec2(arrow_center.x, arrow_center.y - 5.0f), arrow_color, 2.0f);
-        draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y - 5.0f),
-                           ImVec2(arrow_center.x - 4.5f, arrow_center.y - 0.5f), arrow_color, 2.0f);
-        draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y - 5.0f),
-                           ImVec2(arrow_center.x + 4.5f, arrow_center.y - 0.5f), arrow_color, 2.0f);
+        if (is_generating) {
+            const ImVec2 half_size(5.0f, 5.0f);
+            draw_list->AddRectFilled(ImVec2(arrow_center.x - half_size.x, arrow_center.y - half_size.y),
+                                     ImVec2(arrow_center.x + half_size.x, arrow_center.y + half_size.y),
+                                     arrow_color, 1.0f);
+        } else {
+            draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y + 6.0f),
+                               ImVec2(arrow_center.x, arrow_center.y - 5.0f), arrow_color, 2.0f);
+            draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y - 5.0f),
+                               ImVec2(arrow_center.x - 4.5f, arrow_center.y - 0.5f), arrow_color, 2.0f);
+            draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y - 5.0f),
+                               ImVec2(arrow_center.x + 4.5f, arrow_center.y - 0.5f), arrow_color, 2.0f);
+        }
         ImGui::SetCursorScreenPos(input_pos);
         ImGui::Dummy(ImVec2(full_width, total_height));
-        if ((enter || send_clicked) && !message_input.empty()) {
+        if (send_clicked && is_generating) {
+            provider.cancel(&provider, active_turn_id);
+            is_generating = false;
+            active_turn_id = 0;
+            progress_text.clear();
+        } else if (!is_generating && (enter || send_clicked) && !message_input.empty()) {
             if (state.selected_thread > 0) {
                 std::rotate(state.threads.begin(),
                             state.threads.begin() + state.selected_thread,
@@ -319,10 +336,15 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
             request.history = destination.messages;
             request.model = selected_model;
             request.reasoning_effort = selected_reasoning_effort;
+            request.turn_id = next_turn_id++;
             const Result submitted = provider.submit(&provider, std::move(request));
-            if (submitted.status == ResultStatus::Error)
+            if (submitted.status == ResultStatus::Error) {
                 destination.messages.push_back(
                     {ChatMessageRole::Assistant, std::string(submitted.error), {}, {}, {}});
+            } else {
+                active_turn_id = next_turn_id - 1;
+                is_generating = true;
+            }
         }
     }
     ImGui::End();

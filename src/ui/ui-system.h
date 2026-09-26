@@ -13,6 +13,9 @@ private:
     std::string m_message_input;
     std::string m_selected_model;
     std::string m_selected_reasoning_effort;
+    bool m_is_generating = false;
+    TurnId m_active_turn_id = 0;
+    TurnId m_next_turn_id = 1;
     std::string m_progress_text;
     std::string m_progress_conversation_id;
 

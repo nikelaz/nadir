@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
 #include <string>
 #include <csignal>
 #include <sys/types.h>
@@ -19,9 +20,15 @@ std::string string_value(const Json& value, const char* key) {
                                                          : std::string{};
 }
 
+struct CodexProcess;
+
 struct CodexState {
     ProviderRuntime runtime;
     CodexOptions options;
+    std::mutex active_mutex;
+    CodexProcess* active_process = nullptr;
+    TurnId active_turn_id = 0;
+    bool cancel_requested = false;
 };
 
 struct CodexProcess {
@@ -323,8 +330,9 @@ std::vector<ModelOption> fetch_codex_models(const CodexOptions* options,
     return models;
 }
 
-Result run_codex(const CodexOptions* options, const TurnRequest* request,
+Result run_codex(CodexState* state, const TurnRequest* request,
                  ProviderRuntime* runtime) {
+    const CodexOptions* options = &state->options;
     static const bool ignore_sigpipe = [] {
         std::signal(SIGPIPE, SIG_IGN);
         return true;
@@ -336,6 +344,13 @@ Result run_codex(const CodexOptions* options, const TurnRequest* request,
     if (result.status == ResultStatus::Error) {
         force_stop_codex_process(&process);
         return result;
+    }
+
+    {
+        std::lock_guard lock(state->active_mutex);
+        state->active_process = &process;
+        if (state->cancel_requested)
+            kill(process.pid, SIGTERM);
     }
 
     StreamContext stream{runtime, request, false, false, {}};
@@ -397,6 +412,11 @@ Result run_codex(const CodexOptions* options, const TurnRequest* request,
         handle_server_message(&stream, message);
     }
 
+    {
+        std::lock_guard lock(state->active_mutex);
+        if (state->active_process == &process)
+            state->active_process = nullptr;
+    }
     stop_codex_process(&process);
     if (!success)
         return result_error(error.empty() ? "Codex app-server request failed" : error);
@@ -414,7 +434,19 @@ void process_codex(void* context, const TurnRequest* request, ProviderRuntime* r
                                                          static_cast<ProviderRuntime*>(emit_context), event);
                                                  },
                                                  runtime)
-                        : run_codex(&state->options, request, runtime);
+                        : run_codex(state, request, runtime);
+    bool cancelled = false;
+    {
+        std::lock_guard lock(state->active_mutex);
+        cancelled = state->active_turn_id == request->turn_id && state->cancel_requested;
+        if (state->active_turn_id == request->turn_id) {
+            state->active_turn_id = 0;
+            state->active_process = nullptr;
+            state->cancel_requested = false;
+        }
+    }
+    if (cancelled)
+        return;
     if (result.status == ResultStatus::Error) {
         const Event failed{EventKind::TurnFailed, request->conversation_id, request->turn_id,
                            std::string(result.error), {}, {}};
@@ -440,14 +472,36 @@ Result start_codex(Provider* provider) {
 
 Result submit_codex(Provider* provider, TurnRequest request) {
     CodexState* state = static_cast<CodexState*>(provider->state);
-    return provider_runtime_submit(&state->runtime, std::move(request));
+    const TurnId turn_id = request.turn_id;
+    {
+        std::lock_guard lock(state->active_mutex);
+        state->active_turn_id = turn_id;
+        state->cancel_requested = false;
+    }
+    Result result = provider_runtime_submit(&state->runtime, std::move(request));
+    if (result.status == ResultStatus::Error) {
+        std::lock_guard lock(state->active_mutex);
+        if (state->active_turn_id == turn_id) {
+            state->active_turn_id = 0;
+            state->cancel_requested = false;
+        }
+    }
+    return result;
 }
 
 Result respond_codex(Provider*, const ProviderRequestId&, ApprovalDecision) {
     return result_error("Provider has no pending approval request");
 }
 
-void cancel_codex(Provider*, TurnId) {}
+void cancel_codex(Provider* provider, TurnId turn_id) {
+    CodexState* state = static_cast<CodexState*>(provider->state);
+    std::lock_guard lock(state->active_mutex);
+    if (turn_id == 0 || state->active_turn_id != turn_id)
+        return;
+    state->cancel_requested = true;
+    if (state->active_process != nullptr && state->active_process->pid > 0)
+        kill(state->active_process->pid, SIGTERM);
+}
 
 std::vector<Event> poll_codex(Provider* provider) {
     CodexState* state = static_cast<CodexState*>(provider->state);
