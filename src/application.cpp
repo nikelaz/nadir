@@ -1,19 +1,52 @@
 #include "application.h"
-#include <iostream>
 #include <GLFW/glfw3.h>
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
 #include "base/result.h"
+#include <tinyfiledialogs.h>
+#include <string>
 
 constexpr int kWindowWidth = 1440;
 constexpr int kWindowHeight = 900;
 
 static void glfw_error_callback(int code, const char* description) {
-    std::cerr << "GLFW error " << code << ": " << description << '\n';
+    const std::string message = "GLFW error " + std::to_string(code) + ": " +
+        (description != nullptr ? description : "Unknown error");
+    tinyfd_messageBox("Nadir - GLFW error", message.c_str(), "ok", "error", 1);
 }
 
-Result Application::glfw_init() {
+Result Application::init() { 
+    Result glfw_init_result = window_init();
+    if (glfw_init_result.status == ResultStatus::Error) {
+        return glfw_init_result;
+    }
+
+    m_ui = UISystem(m_window);
+
+    if (!m_ui) {
+      window_deinit();
+      return result_error("UI System does not have a value unexpectedly");
+    }
+
+    Result ui_init_result = m_ui->init(); 
+    if (ui_init_result.status == ResultStatus::Error) {
+        window_deinit();
+        return ui_init_result;
+    }
+
+    m_initialized = true;
+
+    return result_ok();
+}
+
+void Application::deinit() {
+    if (m_ui) {
+      m_ui->deinit();
+    }
+    window_deinit();
+
+    m_initialized = false; 
+}
+
+Result Application::window_init() {
     glfwSetErrorCallback(glfw_error_callback);
 
     if (glfwInit() != GLFW_TRUE) {
@@ -37,6 +70,7 @@ Result Application::glfw_init() {
     );
 
     if (m_window == nullptr) {
+        glfwTerminate();
         return result_error("Failed to create application window");
     }
 
@@ -46,62 +80,29 @@ Result Application::glfw_init() {
     return result_ok();
 };
 
-void Application::glfw_deinit() { 
+void Application::window_deinit() { 
     glfwDestroyWindow(m_window);
     glfwTerminate();
 }
 
-Result Application::imgui_init() {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    ImGui::StyleColorsDark();
-
-    if (!ImGui_ImplGlfw_InitForOpenGL(m_window, true)) {
-        ImGui::DestroyContext();
-        return result_error("Failed to initialize Dear ImGui Glfw OpenGL backend");
-    }
-
-    if (!ImGui_ImplOpenGL3_Init("#version 150")) {
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
-        return result_error("Failed to initialize Dear ImGui OpenGL 3 backend");
-    }
-
-    return result_ok();
-}
-
-void Application::imgui_deinit() {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-}
-
 void Application::run() {
-    while (glfwWindowShouldClose(m_window) == GLFW_FALSE) {
+    if (!m_initialized) {
+        tinyfd_messageBox("Nadir", "Application has to be initialized with init() before run()",
+                          "ok", "error", 1);
+        return;
+    }
+
+    if (!m_ui.has_value()) {
+        tinyfd_messageBox("Nadir", "UI System is not initialized in Application",
+                          "ok", "error", 1);
+        return;
+    }
+
+    while (!glfwWindowShouldClose(m_window)) {
         glfwPollEvents();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        m_ui->render_frame_to_backbuffer();
 
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-
-        ImGui::Begin("Agent Harness");
-        ImGui::TextUnformatted("Agent orchestration workspace");
-        ImGui::Separator();
-        ImGui::TextUnformatted("Project scaffold is ready.");
-        ImGui::End();
-
-        ImGui::Render();
-        int display_width = 0;
-        int display_height = 0;
-        glfwGetFramebufferSize(m_window, &display_width, &display_height);
-        glViewport(0, 0, display_width, display_height);
-        glClearColor(0.08F, 0.09F, 0.11F, 1.0F);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(m_window);
     }
 }

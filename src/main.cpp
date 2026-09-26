@@ -1,26 +1,20 @@
 #include <GLFW/glfw3.h>
 #include "application.h"
-#include <iostream>
+#include "base/result.h"
+#include <tinyfiledialogs.h>
+#include <string>
 
 int main() {
-    Application app;
+    Application app; 
 
-    Result glfw_init_result = app.glfw_init();
-    if (glfw_init_result.status != ResultStatus::Ok) {
-      std::cerr << "GLFW init error: " << glfw_init_result.error << std::endl;
-      return 1;
-    }
-
-    Result imgui_init_result = app.imgui_init();
-    if (imgui_init_result.status != ResultStatus::Ok) {
-      std::cerr << "Imgui init error: " << imgui_init_result.error << std::endl;
-      app.glfw_deinit();
-      return 1;
+    Result app_init_result = app.init();
+    if (app_init_result.status == ResultStatus::Error) {
+        const std::string error_message(app_init_result.error);
+        tinyfd_messageBox("nadir", error_message.c_str(), "ok", "error", 1);
+        return 1;
     }
 
     app.run();
-
-    app.imgui_deinit();
-    app.glfw_deinit();
+    app.deinit();
     return 0;
 }

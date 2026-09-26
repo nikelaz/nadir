@@ -20,6 +20,8 @@ add_subdirectory(third_party/glfw EXCLUDE_FROM_ALL)
 
 find_package(OpenGL REQUIRED)
 
+set_source_files_properties(third_party/tinyfiledialogs/tinyfiledialogs.c PROPERTIES LANGUAGE CXX)
+
 add_library(imgui STATIC
     third_party/imgui/imgui.cpp
     third_party/imgui/imgui_draw.cpp
@@ -38,7 +40,13 @@ add_executable(nadir
     src/main.cpp
     src/base/result.cpp
     src/application.cpp
+    src/ui/chat-panel.cpp
+    src/ui/dock-area.cpp
+    src/ui/threads-panel.cpp
+    src/ui/ui-system.cpp
+    third_party/tinyfiledialogs/tinyfiledialogs.c
 )
+target_include_directories(nadir PRIVATE third_party/tinyfiledialogs)
 target_link_libraries(nadir PRIVATE imgui glfw OpenGL::GL)
 
 if(APPLE)

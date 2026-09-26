@@ -3,15 +3,23 @@
 
 #include <GLFW/glfw3.h>
 #include "base/result.h"
+#include "ui/ui-system.h"
+#include <optional>
 
-struct Application {
-    GLFWwindow *m_window;
+class Application {
+public:
+    GLFWwindow *m_window = nullptr;
+    std::optional<UISystem> m_ui;
 
-    Result glfw_init();
-    void glfw_deinit();
-    Result imgui_init();
-    void imgui_deinit();
+    Result init();
+    void deinit();
     void run();
+
+private:
+    bool m_initialized = false;
+
+    Result window_init();
+    void window_deinit();
 };
 
 #endif
