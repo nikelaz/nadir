@@ -135,7 +135,8 @@ Result PersistentStore::open(const std::string& path) {
         "CREATE TABLE IF NOT EXISTS threads ("
         "  position INTEGER PRIMARY KEY,"
         "  title TEXT NOT NULL,"
-        "  description TEXT NOT NULL"
+        "  description TEXT NOT NULL,"
+        "  thread_id TEXT NOT NULL DEFAULT ''"
         ");"
         "CREATE TABLE IF NOT EXISTS messages ("
         "  thread_position INTEGER NOT NULL REFERENCES threads(position) ON DELETE CASCADE,"
@@ -165,6 +166,12 @@ Result PersistentStore::open(const std::string& path) {
         if (migration.status == ResultStatus::Error)
             return migration;
     }
+    if (!has_column(m_database, "threads", "thread_id")) {
+        Result migration = execute("ALTER TABLE threads ADD COLUMN thread_id TEXT NOT NULL DEFAULT ''",
+                                   "Failed to add thread identity storage");
+        if (migration.status == ResultStatus::Error)
+            return migration;
+    }
     return result_ok();
 }
 
@@ -187,7 +194,7 @@ Result PersistentStore::load(ApplicationState& state) {
     Statement thread_statement;
     Statement message_statement;
     if (!prepare(m_database,
-                 "SELECT position, title, description FROM threads ORDER BY position",
+                 "SELECT position, title, description, thread_id FROM threads ORDER BY position",
                  thread_statement) ||
         !prepare(m_database,
                  "SELECT role, content, reasoning, segments FROM messages WHERE thread_position = ? ORDER BY position",
@@ -201,8 +208,11 @@ Result PersistentStore::load(ApplicationState& state) {
         ChatThread thread{
             column_text(thread_statement.get(), 1),
             column_text(thread_statement.get(), 2),
+            column_text(thread_statement.get(), 3),
             {},
         };
+        if (thread.id.empty())
+            thread.id = "legacy-thread-" + std::to_string(position);
 
         if (sqlite3_bind_int(message_statement.get(), 1, position) != SQLITE_OK) {
             return fail("Failed to load saved messages");
@@ -276,7 +286,7 @@ Result PersistentStore::save(const ApplicationState& state) {
     Statement message_statement;
     Statement setting_statement;
     if (!prepare(m_database,
-                 "INSERT INTO threads(position, title, description) VALUES(?, ?, ?)",
+                 "INSERT INTO threads(position, title, description, thread_id) VALUES(?, ?, ?, ?)",
                  thread_statement) ||
         !prepare(m_database,
                  "INSERT INTO messages(thread_position, position, role, content, reasoning, segments) VALUES(?, ?, ?, ?, ?, ?)",
@@ -293,6 +303,7 @@ Result PersistentStore::save(const ApplicationState& state) {
         sqlite3_bind_int(thread_statement.get(), 1, static_cast<int>(thread_index));
         sqlite3_bind_text(thread_statement.get(), 2, thread.title.c_str(), -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(thread_statement.get(), 3, thread.description.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(thread_statement.get(), 4, thread.id.c_str(), -1, SQLITE_TRANSIENT);
         if (sqlite3_step(thread_statement.get()) != SQLITE_DONE) {
             return rollback(fail("Failed to save thread"));
         }

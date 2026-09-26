@@ -20,6 +20,11 @@ add_subdirectory(third_party/glfw EXCLUDE_FROM_ALL)
 
 find_package(OpenGL REQUIRED)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(Fontconfig REQUIRED IMPORTED_TARGET fontconfig)
+endif()
+
 set_source_files_properties(third_party/tinyfiledialogs/tinyfiledialogs.c PROPERTIES LANGUAGE CXX)
 add_subdirectory(third_party/sqlite3 EXCLUDE_FROM_ALL)
 
@@ -157,6 +162,10 @@ add_executable(nadir
 )
 target_include_directories(nadir PRIVATE third_party/tinyfiledialogs third_party/sqlite3 third_party/json/include)
 target_link_libraries(nadir PRIVATE imgui_md SQLite3)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(nadir PRIVATE PkgConfig::Fontconfig)
+endif()
 
 if(APPLE)
     target_compile_definitions(nadir PRIVATE GL_SILENCE_DEPRECATION)

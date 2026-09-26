@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "imgui_md.h"
 #include "misc/cpp/imgui_stdlib.h"
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <utility>
@@ -12,7 +13,7 @@ void render_tool_icon() {
     const float radius = ImGui::GetTextLineHeight() * 0.32f;
     const ImVec2 icon_center(center.x + radius, center.y + ImGui::GetTextLineHeight() * 0.5f);
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    const ImU32 color = ImGui::GetColorU32(ImVec4(0.55f, 0.78f, 0.96f, 1.0f));
+    const ImU32 color = ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     draw_list->AddCircle(icon_center, radius, color, 12, 1.8f);
     draw_list->AddCircleFilled(icon_center, radius * 0.3f, color, 8);
@@ -32,9 +33,9 @@ void render_tool_activity(const ToolActivity& tool) {
         ? (tool.completed ? "Completed" : "Running") : tool.status;
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.12f, 0.14f, 0.18f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.16f, 0.19f, 0.24f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.18f, 0.22f, 0.28f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.17f, 0.17f, 0.17f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     draw_list->ChannelsSplit(2);
@@ -65,10 +66,38 @@ void render_tool_activity(const ToolActivity& tool) {
     const ImVec2 card_max = ImGui::GetItemRectMax();
     draw_list->ChannelsSetCurrent(0);
     draw_list->AddRectFilled(card_min, ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x, card_max.y),
-                             ImGui::GetColorU32(ImVec4(0.12f, 0.14f, 0.18f, 1.0f)), 5.0f);
+                             ImGui::GetColorU32(ImVec4(0.105f, 0.105f, 0.105f, 1.0f)));
     draw_list->ChannelsMerge();
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar(2);
+}
+
+void render_user_message(const ChatMessage& message) {
+    constexpr float horizontal_padding = 12.0f;
+    constexpr float vertical_padding = 8.0f;
+    constexpr float max_width_ratio = 0.8f;
+    const float available_width = ImGui::GetContentRegionAvail().x;
+    const float max_text_width = std::max(1.0f, available_width * max_width_ratio -
+                                                   horizontal_padding * 2.0f);
+    const ImVec2 measured = ImGui::CalcTextSize(message.content.c_str(), nullptr, false,
+                                                max_text_width);
+    const float text_width = std::min(max_text_width, std::max(1.0f, measured.x));
+    const float text_height = std::max(ImGui::GetTextLineHeight(), measured.y);
+    const ImVec2 row_pos = ImGui::GetCursorScreenPos();
+    const float bubble_width = text_width + horizontal_padding * 2.0f;
+    const float bubble_height = text_height + vertical_padding * 2.0f;
+    const ImVec2 bubble_min(row_pos.x + available_width - bubble_width, row_pos.y);
+    const ImVec2 bubble_max(bubble_min.x + bubble_width, bubble_min.y + bubble_height);
+
+    ImGui::GetWindowDrawList()->AddRectFilled(
+        bubble_min, bubble_max, ImGui::GetColorU32(ImVec4(0.20f, 0.20f, 0.20f, 1.0f)), 6.0f);
+    ImGui::SetCursorScreenPos(ImVec2(bubble_min.x + horizontal_padding,
+                                     bubble_min.y + vertical_padding));
+    ImGui::PushTextWrapPos(bubble_min.x + horizontal_padding + max_text_width);
+    ImGui::TextWrapped("%s", message.content.c_str());
+    ImGui::PopTextWrapPos();
+    ImGui::SetCursorScreenPos(row_pos);
+    ImGui::Dummy(ImVec2(available_width, bubble_height));
 }
 }
 
@@ -78,13 +107,23 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
     ImGui::Begin("Chat");
     if (!state.threads.empty() && state.selected_thread < state.threads.size()) {
         ChatThread& thread = state.threads[state.selected_thread];
+        constexpr float outer_padding = 8.0f;
+        constexpr float input_height = 58.0f;
+        constexpr float footer_height = 38.0f;
+        constexpr float composer_height = outer_padding + input_height + footer_height;
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::BeginChild("##messages", ImVec2(0.0f, -ImGui::GetFrameHeightWithSpacing() * 5.0f),
-                          false);
+        const float available_height = ImGui::GetContentRegionAvail().y;
+        const float message_height = std::max(
+            0.0f, available_height - composer_height - ImGui::GetStyle().ItemSpacing.y);
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::BeginChild("##messages", ImVec2(0.0f, message_height), false);
         const bool was_at_bottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
         for (const ChatMessage& message : thread.messages) {
-            const char* role = message.role == ChatMessageRole::User ? "You" : "Assistant";
-            ImGui::TextUnformatted(role);
+            if (message.role == ChatMessageRole::User) {
+                render_user_message(message);
+                ImGui::Spacing();
+                continue;
+            }
             if (!message.reasoning.empty()) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.65f, 0.72f, 0.82f, 1.0f));
                 if (ImGui::TreeNode("##thinking", "Thinking")) {
@@ -114,8 +153,6 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
                 }
                 markdown.print(message.content.c_str(),
                                message.content.c_str() + message.content.size());
-            } else {
-                ImGui::TextWrapped("%s", message.content.c_str());
             }
             ImGui::Spacing();
         }
@@ -128,22 +165,18 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
         if (was_at_bottom)
             ImGui::SetScrollHereY(1.0f);
         ImGui::EndChild();
+        ImGui::PopStyleColor();
         ImGui::PopStyleVar();
         const ImVec2 input_pos = ImGui::GetCursorScreenPos();
         const float full_width = ImGui::GetContentRegionAvail().x;
-        constexpr float outer_padding = 8.0f;
-        constexpr float input_height = 58.0f;
-        constexpr float footer_height = 38.0f;
-        constexpr float total_height = outer_padding + input_height + footer_height;
+        constexpr float total_height = composer_height;
         const float send_size = 32.0f;
         const ImVec2 frame_max(input_pos.x + full_width, input_pos.y + total_height);
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
         draw_list->AddRectFilled(input_pos, frame_max,
-                                 ImGui::GetColorU32(ImGuiCol_FrameBg),
-                                 ImGui::GetStyle().FrameRounding);
+                                 ImGui::GetColorU32(ImGuiCol_FrameBg), 6.0f);
         draw_list->AddRect(input_pos, frame_max,
-                           ImGui::GetColorU32(ImGuiCol_Border),
-                           ImGui::GetStyle().FrameRounding);
+                           ImGui::GetColorU32(ImGuiCol_Border), 6.0f);
         const float divider_y = input_pos.y + outer_padding + input_height;
         draw_list->AddLine(ImVec2(input_pos.x + 1.0f, divider_y),
                            ImVec2(frame_max.x - 1.0f, divider_y),
@@ -168,13 +201,15 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
         const ImVec2 button_min = ImGui::GetItemRectMin();
         const ImVec2 button_max = ImGui::GetItemRectMax();
         const ImU32 button_color = ImGui::GetColorU32(
-            ImGui::IsItemActive() ? ImVec4(0.20f, 0.48f, 0.68f, 1.0f)
-            : ImGui::IsItemHovered() ? ImVec4(0.18f, 0.42f, 0.60f, 1.0f)
-                                     : ImVec4(0.15f, 0.34f, 0.48f, 1.0f));
-        draw_list->AddRectFilled(button_min, button_max, button_color, 5.0f);
+            ImGui::IsItemActive() ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f)
+            : ImGui::IsItemHovered() ? ImVec4(0.42f, 0.42f, 0.42f, 1.0f)
+                                     : ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
+        draw_list->AddRectFilled(button_min, button_max, button_color, 6.0f);
         const ImVec2 arrow_center((button_min.x + button_max.x) * 0.5f,
                                   (button_min.y + button_max.y) * 0.5f);
-        const ImU32 arrow_color = ImGui::GetColorU32(ImVec4(0.94f, 0.97f, 1.0f, 1.0f));
+        const ImU32 arrow_color = ImGui::GetColorU32(ImGui::IsItemActive()
+            ? ImVec4(0.08f, 0.08f, 0.08f, 1.0f)
+            : ImVec4(0.94f, 0.94f, 0.94f, 1.0f));
         draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y + 6.0f),
                            ImVec2(arrow_center.x, arrow_center.y - 5.0f), arrow_color, 2.0f);
         draw_list->AddLine(ImVec2(arrow_center.x, arrow_center.y - 5.0f),
@@ -186,15 +221,15 @@ void render_chat_panel(ApplicationState& state, std::string& message_input, Prov
         if ((enter || send_clicked) && !message_input.empty()) {
             std::string prompt = std::move(message_input);
             message_input.clear();
-            thread.messages.push_back({ChatMessageRole::User, prompt});
+            thread.messages.push_back({ChatMessageRole::User, prompt, {}, {}, {}});
             TurnRequest request;
-            request.conversation_id = std::to_string(state.selected_thread);
+            request.conversation_id = thread.id;
             request.prompt = std::move(prompt);
             request.history = thread.messages;
             const Result submitted = provider.submit(&provider, std::move(request));
             if (submitted.status == ResultStatus::Error)
                 thread.messages.push_back(
-                    {ChatMessageRole::Assistant, std::string(submitted.error)});
+                    {ChatMessageRole::Assistant, std::string(submitted.error), {}, {}, {}});
         }
     }
     ImGui::End();

@@ -39,6 +39,7 @@ struct ChatMessage {
 struct ChatThread {
     std::string title;
     std::string description;
+    std::string id;
     std::vector<ChatMessage> messages;
 };
 
@@ -47,11 +48,13 @@ struct ApplicationState {
         {
             "Project setup",
             "Getting the application structure and core systems in place.",
+            "project-setup",
             {}
         },
         {
             "UI layout",
             "Planning the workspace panels and how they fit together.",
+            "ui-layout",
             {}
         },
     };

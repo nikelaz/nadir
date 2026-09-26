@@ -29,16 +29,16 @@ struct Event {
     EventKind kind;
     ConversationId conversation_id;
     TurnId turn_id = 0;
-    std::string text;
-    std::string provider_thread_id;
-    ProviderRequestId provider_request_id;
-    std::string item_id;
-    std::string cwd;
-    std::string output;
+    std::string text{};
+    std::string provider_thread_id{};
+    ProviderRequestId provider_request_id{};
+    std::string item_id{};
+    std::string cwd{};
+    std::string output{};
     int exit_code = -1;
     bool tool_completed = false;
     bool output_is_delta = false;
-    std::string status;
+    std::string status{};
     int duration_ms = -1;
 };
 

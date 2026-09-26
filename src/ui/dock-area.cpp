@@ -2,6 +2,16 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+namespace {
+void hide_dock_menu_buttons(ImGuiDockNode* node) {
+    if (node == nullptr)
+        return;
+    node->SetLocalFlags(node->LocalFlags | ImGuiDockNodeFlags_NoWindowMenuButton);
+    hide_dock_menu_buttons(node->ChildNodes[0]);
+    hide_dock_menu_buttons(node->ChildNodes[1]);
+}
+}
+
 void render_dock_area() {
     const ImGuiID dockspace_id = ImHashStr("MainDockSpace");
     if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
@@ -17,5 +27,6 @@ void render_dock_area() {
         ImGui::DockBuilderFinish(dockspace_id);
     }
 
+    hide_dock_menu_buttons(ImGui::DockBuilderGetNode(dockspace_id));
     ImGui::DockSpaceOverViewport(dockspace_id, ImGui::GetMainViewport());
 }
