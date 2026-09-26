@@ -13,6 +13,8 @@ enum class ChatMessageRole {
 struct ChatMessage {
     ChatMessageRole role;
     std::string content;
+    std::string reasoning;
+    std::vector<std::string> tool_activities;
 };
 
 struct ChatThread {

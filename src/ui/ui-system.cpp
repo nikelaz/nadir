@@ -72,6 +72,14 @@ void UISystem::render_frame_to_backbuffer() {
                 if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
                     messages.push_back({ChatMessageRole::Assistant, {}});
                 messages.back().content += event.text;
+            } else if (event.kind == EventKind::AssistantReasoningDelta) {
+                if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
+                    messages.push_back({ChatMessageRole::Assistant, {}});
+                messages.back().reasoning += event.text;
+            } else if (event.kind == EventKind::ToolActivity) {
+                if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
+                    messages.push_back({ChatMessageRole::Assistant, {}});
+                messages.back().tool_activities.push_back(event.text);
             } else if (event.kind == EventKind::TurnFailed)
                 messages.push_back({ChatMessageRole::Assistant, event.text});
         } catch (...) {

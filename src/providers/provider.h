@@ -17,6 +17,7 @@ using ProviderRequestId = std::string;
 enum class EventKind {
     ProviderThreadStarted,
     AssistantTextDelta,
+    AssistantReasoningDelta,
     ToolActivity,
     ApprovalRequested,
     TurnCompleted,
