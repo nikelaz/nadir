@@ -3,6 +3,6 @@
 
 #include "ui-state.h"
 
-void render_chat_panel(const UIState& state);
+void render_chat_panel(UIState& state);
 
 #endif
