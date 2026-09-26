@@ -5,3 +5,4 @@
 *.user
 *.suo
 imgui.ini
+nadir.sqlite3

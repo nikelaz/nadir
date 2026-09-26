@@ -1,7 +1,7 @@
 #include "threads-panel.h"
 #include "imgui.h"
 
-void render_threads_panel(UIState& state) {
+void render_threads_panel(ApplicationState& state) {
     ImGui::Begin("Threads");
     ImGui::TextUnformatted("Threads");
     ImGui::Separator();

@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 #include "base/result.h"
 #include "ui/ui-system.h"
+#include "state/application-state.h"
+#include "persistence/persistent-store.h"
 #include <optional>
 
 class Application {
@@ -17,6 +19,8 @@ public:
 
 private:
     bool m_initialized = false;
+    ApplicationState m_state;
+    PersistentStore m_state_store;
 
     Result window_init();
     void window_deinit();

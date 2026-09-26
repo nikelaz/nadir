@@ -7,8 +7,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-UISystem::UISystem(GLFWwindow* window) 
-  : m_window(window) {}
+UISystem::UISystem(GLFWwindow* window, ApplicationState& state)
+  : m_window(window), m_state(state) {}
 
 Result UISystem::init() {
     IMGUI_CHECKVERSION();
@@ -65,7 +65,7 @@ void UISystem::render_frame_to_backbuffer() {
 
     render_dock_area();
     render_threads_panel(m_state);
-    render_chat_panel(m_state);
+    render_chat_panel(m_state, m_message_input);
 
     prepare_backbuffer();
 }

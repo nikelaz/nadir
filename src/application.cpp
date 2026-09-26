@@ -19,7 +19,21 @@ Result Application::init() {
         return glfw_init_result;
     }
 
-    m_ui = UISystem(m_window);
+    Result state_result = m_state_store.open("nadir.sqlite3");
+    if (state_result.status == ResultStatus::Error) {
+        m_state_store.close();
+        window_deinit();
+        return state_result;
+    }
+
+    state_result = m_state_store.load(m_state);
+    if (state_result.status == ResultStatus::Error) {
+        m_state_store.close();
+        window_deinit();
+        return state_result;
+    }
+
+    m_ui.emplace(m_window, m_state);
 
     if (!m_ui) {
       window_deinit();
@@ -28,6 +42,7 @@ Result Application::init() {
 
     Result ui_init_result = m_ui->init(); 
     if (ui_init_result.status == ResultStatus::Error) {
+        m_state_store.close();
         window_deinit();
         return ui_init_result;
     }
@@ -38,9 +53,19 @@ Result Application::init() {
 }
 
 void Application::deinit() {
-    if (m_ui) {
+    if (m_initialized && m_ui) {
       m_ui->deinit();
     }
+
+    if (m_initialized) {
+        Result state_result = m_state_store.save(m_state);
+        if (state_result.status == ResultStatus::Error) {
+            const std::string error_message(state_result.error);
+            tinyfd_messageBox("Nadir", error_message.c_str(), "ok", "error", 1);
+        }
+    }
+    m_state_store.close();
+
     window_deinit();
 
     m_initialized = false; 
