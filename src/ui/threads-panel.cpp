@@ -62,13 +62,30 @@ void render_threads_panel(ApplicationState& state) {
         if (selected)
             state.selected_thread = i;
 
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
         if (ImGui::BeginPopupContextItem("thread_context", ImGuiPopupFlags_MouseButtonRight)) {
-            if (ImGui::MenuItem("Delete thread")) {
+            constexpr float menu_item_padding_x = 13.0f;
+            constexpr float menu_item_padding_y = 8.0f;
+            const ImVec2 label_size = ImGui::CalcTextSize("Delete thread");
+            const ImVec2 menu_item_pos = ImGui::GetCursorScreenPos();
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_SelectableRounding, 6.0f);
+            const bool delete_thread = ImGui::Selectable(
+                "##delete-thread-item", false, 0,
+                ImVec2(label_size.x + menu_item_padding_x * 2.0f,
+                       label_size.y + menu_item_padding_y * 2.0f));
+            ImGui::GetWindowDrawList()->AddText(
+                ImVec2(menu_item_pos.x + menu_item_padding_x,
+                       menu_item_pos.y + menu_item_padding_y),
+                ImGui::GetColorU32(ImGuiCol_Text), "Delete thread");
+            ImGui::PopStyleVar(2);
+            if (delete_thread) {
                 pending_delete = i;
                 open_delete_confirmation = true;
             }
             ImGui::EndPopup();
         }
+        ImGui::PopStyleVar();
 
         const ImVec2 card_min = ImGui::GetItemRectMin();
         const ImVec2 card_max = ImGui::GetItemRectMax();
@@ -92,6 +109,7 @@ void render_threads_panel(ApplicationState& state) {
     if (open_delete_confirmation)
         ImGui::OpenPopup("Confirm thread deletion");
 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
     if (ImGui::BeginPopupModal("Confirm thread deletion", nullptr,
                                ImGuiWindowFlags_AlwaysAutoResize)) {
         if (pending_delete && *pending_delete < state.threads.size()) {
@@ -129,6 +147,7 @@ void render_threads_panel(ApplicationState& state) {
         }
         ImGui::EndPopup();
     }
+    ImGui::PopStyleVar();
 
     ImGui::PopStyleVar();
     ImGui::End();

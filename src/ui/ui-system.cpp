@@ -79,7 +79,7 @@ void set_premiere_theme() {
     style.WindowBorderSize = 1.0f;
     style.ChildRounding = 0.0f;
     style.ChildBorderSize = 1.0f;
-    style.PopupRounding = 0.0f;
+    style.PopupRounding = 6.0f;
     style.PopupBorderSize = 1.0f;
     style.FramePadding = ImVec2(10.0f, 6.0f);
     style.FrameRounding = 0.0f;
@@ -127,7 +127,7 @@ void set_premiere_theme() {
     colors[ImGuiCol_SliderGrabActive] = accent_hover;
     colors[ImGuiCol_Button] = raised;
     colors[ImGuiCol_ButtonHovered] = hover;
-    colors[ImGuiCol_ButtonActive] = accent;
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);
     colors[ImGuiCol_Header] = raised;
     colors[ImGuiCol_HeaderHovered] = hover;
     colors[ImGuiCol_HeaderActive] = ImVec4(0.28f, 0.28f, 0.28f, 1.0f);
