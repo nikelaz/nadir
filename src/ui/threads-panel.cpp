@@ -5,6 +5,16 @@ void render_threads_panel(ApplicationState& state) {
     ImGui::Begin("Threads");
     ImGui::TextUnformatted("Threads");
     ImGui::Separator();
+    if (ImGui::Button("+ New thread", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f))) {
+        state.threads.push_back({
+            "New thread " + std::to_string(state.threads.size() + 1),
+            "A new conversation.",
+            {},
+        });
+        state.selected_thread = state.threads.size() - 1;
+    }
+    ImGui::Spacing();
+
     for (std::size_t i = 0; i < state.threads.size(); ++i) {
         ImGui::PushID(static_cast<int>(i));
         const ImGuiStyle& style = ImGui::GetStyle();
