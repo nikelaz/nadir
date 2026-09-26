@@ -1,5 +1,6 @@
 #include "persistent-store.h"
 #include <sqlite3.h>
+#include <nlohmann/json.hpp>
 #include <memory>
 #include <utility>
 
@@ -11,6 +12,7 @@ struct StatementDeleter {
 };
 
 using Statement = std::unique_ptr<sqlite3_stmt, StatementDeleter>;
+using Json = nlohmann::json;
 
 bool prepare(sqlite3* database, const char* sql, Statement& statement) {
     sqlite3_stmt* raw_statement = nullptr;
@@ -24,6 +26,73 @@ bool prepare(sqlite3* database, const char* sql, Statement& statement) {
 std::string column_text(sqlite3_stmt* statement, int column) {
     const auto* text = sqlite3_column_text(statement, column);
     return text == nullptr ? std::string{} : reinterpret_cast<const char*>(text);
+}
+
+bool has_column(sqlite3* database, const char* table, const char* column) {
+    const std::string sql = std::string("PRAGMA table_info(") + table + ")";
+    Statement statement;
+    if (!prepare(database, sql.c_str(), statement))
+        return false;
+    while (sqlite3_step(statement.get()) == SQLITE_ROW) {
+        if (column_text(statement.get(), 1) == column)
+            return true;
+    }
+    return false;
+}
+
+Json serialize_segments(const std::vector<ChatSegment>& segments) {
+    Json result = Json::array();
+    for (const ChatSegment& segment : segments) {
+        if (segment.kind == ChatSegment::Kind::Text) {
+            result.push_back({{"kind", "text"}, {"text", segment.text}});
+        } else {
+            const ToolActivity& tool = segment.tool;
+            Json value = {{"kind", "tool"}, {"id", tool.id}, {"command", tool.command},
+                          {"cwd", tool.cwd}, {"output", tool.output}, {"status", tool.status},
+                          {"completed", tool.completed}};
+            if (tool.exit_code)
+                value["exit_code"] = *tool.exit_code;
+            if (tool.duration_ms)
+                value["duration_ms"] = *tool.duration_ms;
+            result.push_back(std::move(value));
+        }
+    }
+    return result;
+}
+
+std::vector<ChatSegment> deserialize_segments(const std::string& serialized) {
+    std::vector<ChatSegment> result;
+    try {
+        const Json values = Json::parse(serialized);
+        if (!values.is_array())
+            return result;
+        for (const Json& value : values) {
+            if (!value.is_object())
+                continue;
+            ChatSegment segment;
+            if (value.value("kind", std::string{}) == "tool") {
+                segment.kind = ChatSegment::Kind::Tool;
+                segment.tool.id = value.value("id", std::string{});
+                segment.tool.command = value.value("command", std::string{});
+                segment.tool.cwd = value.value("cwd", std::string{});
+                segment.tool.output = value.value("output", std::string{});
+                segment.tool.status = value.value("status", std::string{});
+                segment.tool.completed = value.value("completed", false);
+                if (value.contains("exit_code") && value["exit_code"].is_number_integer())
+                    segment.tool.exit_code = value["exit_code"].get<int>();
+                if (value.contains("duration_ms") && value["duration_ms"].is_number_integer())
+                    segment.tool.duration_ms = value["duration_ms"].get<int>();
+            } else if (value.value("kind", std::string{}) == "text") {
+                segment.kind = ChatSegment::Kind::Text;
+                segment.text = value.value("text", std::string{});
+            } else {
+                continue;
+            }
+            result.push_back(std::move(segment));
+        }
+    } catch (...) {
+    }
+    return result;
 }
 }
 
@@ -61,7 +130,7 @@ Result PersistentStore::open(const std::string& path) {
         return error;
     }
 
-    return execute(
+    Result initialization = execute(
         "PRAGMA foreign_keys = ON;"
         "CREATE TABLE IF NOT EXISTS threads ("
         "  position INTEGER PRIMARY KEY,"
@@ -73,6 +142,8 @@ Result PersistentStore::open(const std::string& path) {
         "  position INTEGER NOT NULL,"
         "  role INTEGER NOT NULL CHECK(role IN (0, 1)),"
         "  content TEXT NOT NULL,"
+        "  reasoning TEXT NOT NULL DEFAULT '',"
+        "  segments TEXT NOT NULL DEFAULT '[]',"
         "  PRIMARY KEY(thread_position, position)"
         ");"
         "CREATE TABLE IF NOT EXISTS settings ("
@@ -80,6 +151,21 @@ Result PersistentStore::open(const std::string& path) {
         "  value INTEGER NOT NULL"
         ");",
         "Failed to initialize application state database");
+    if (initialization.status == ResultStatus::Error)
+        return initialization;
+    if (!has_column(m_database, "messages", "reasoning")) {
+        Result migration = execute("ALTER TABLE messages ADD COLUMN reasoning TEXT NOT NULL DEFAULT ''",
+                                   "Failed to add message reasoning storage");
+        if (migration.status == ResultStatus::Error)
+            return migration;
+    }
+    if (!has_column(m_database, "messages", "segments")) {
+        Result migration = execute("ALTER TABLE messages ADD COLUMN segments TEXT NOT NULL DEFAULT '[]'",
+                                   "Failed to add message segment storage");
+        if (migration.status == ResultStatus::Error)
+            return migration;
+    }
+    return result_ok();
 }
 
 Result PersistentStore::load(ApplicationState& state) {
@@ -104,7 +190,7 @@ Result PersistentStore::load(ApplicationState& state) {
                  "SELECT position, title, description FROM threads ORDER BY position",
                  thread_statement) ||
         !prepare(m_database,
-                 "SELECT role, content FROM messages WHERE thread_position = ? ORDER BY position",
+                 "SELECT role, content, reasoning, segments FROM messages WHERE thread_position = ? ORDER BY position",
                  message_statement)) {
         return fail("Failed to load saved threads");
     }
@@ -124,12 +210,18 @@ Result PersistentStore::load(ApplicationState& state) {
         int message_result = SQLITE_ROW;
         while ((message_result = sqlite3_step(message_statement.get())) == SQLITE_ROW) {
             const int role = sqlite3_column_int(message_statement.get(), 0);
-            thread.messages.push_back({
+            ChatMessage message{
                 role == static_cast<int>(ChatMessageRole::Assistant)
                     ? ChatMessageRole::Assistant
                     : ChatMessageRole::User,
                 column_text(message_statement.get(), 1),
-            });
+                {},
+                {},
+                {},
+            };
+            message.reasoning = column_text(message_statement.get(), 2);
+            message.segments = deserialize_segments(column_text(message_statement.get(), 3));
+            thread.messages.push_back(std::move(message));
         }
         if (message_result != SQLITE_DONE) {
             return fail("Failed to load saved messages");
@@ -187,7 +279,7 @@ Result PersistentStore::save(const ApplicationState& state) {
                  "INSERT INTO threads(position, title, description) VALUES(?, ?, ?)",
                  thread_statement) ||
         !prepare(m_database,
-                 "INSERT INTO messages(thread_position, position, role, content) VALUES(?, ?, ?, ?)",
+                 "INSERT INTO messages(thread_position, position, role, content, reasoning, segments) VALUES(?, ?, ?, ?, ?, ?)",
                  message_statement) ||
         !prepare(m_database,
                  "INSERT INTO settings(name, value) VALUES('selected_thread', ?) "
@@ -213,6 +305,9 @@ Result PersistentStore::save(const ApplicationState& state) {
             sqlite3_bind_int(message_statement.get(), 2, static_cast<int>(message_index));
             sqlite3_bind_int(message_statement.get(), 3, static_cast<int>(message.role));
             sqlite3_bind_text(message_statement.get(), 4, message.content.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_text(message_statement.get(), 5, message.reasoning.c_str(), -1, SQLITE_TRANSIENT);
+            const std::string segments = serialize_segments(message.segments).dump();
+            sqlite3_bind_text(message_statement.get(), 6, segments.c_str(), -1, SQLITE_TRANSIENT);
             if (sqlite3_step(message_statement.get()) != SQLITE_DONE) {
                 return rollback(fail("Failed to save message"));
             }

@@ -6,6 +6,8 @@
 #include "imgui_impl_opengl3.h"
 #include "threads-panel.h"
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <iterator>
 
 UISystem::UISystem(GLFWwindow* window, ApplicationState& state, Provider& provider)
     : m_window(window), m_state(state), m_provider(provider) {}
@@ -68,26 +70,79 @@ void UISystem::render_frame_to_backbuffer() {
             if (index >= m_state.threads.size())
                 continue;
             auto& messages = m_state.threads[index].messages;
-            if (event.kind == EventKind::AssistantTextDelta) {
+            if (event.kind == EventKind::ReasoningSummaryDelta ||
+                event.kind == EventKind::AssistantReasoningDelta ||
+                event.kind == EventKind::ToolActivity) {
+                if (m_progress_conversation_id != event.conversation_id) {
+                    m_progress_conversation_id = event.conversation_id;
+                    m_progress_text.clear();
+                }
+                if (event.kind == EventKind::ReasoningSummaryDelta ||
+                    event.kind == EventKind::AssistantReasoningDelta) {
+                    m_progress_text += event.text;
+                    if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
+                        messages.push_back({ChatMessageRole::Assistant, {}});
+                    messages.back().reasoning += event.text;
+                } else {
+                    if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
+                        messages.push_back({ChatMessageRole::Assistant, {}});
+                    ChatMessage& message = messages.back();
+                    auto segment = message.segments.end();
+                    if (!event.item_id.empty()) {
+                        segment = std::find_if(message.segments.begin(), message.segments.end(),
+                                               [&event](const ChatSegment& value) {
+                                                   return value.kind == ChatSegment::Kind::Tool &&
+                                                          value.tool.id == event.item_id;
+                                               });
+                    }
+                    if (segment == message.segments.end()) {
+                        ChatSegment value;
+                        value.kind = ChatSegment::Kind::Tool;
+                        value.tool.id = event.item_id;
+                        message.segments.push_back(std::move(value));
+                        segment = std::prev(message.segments.end());
+                    }
+                    if (!event.text.empty())
+                        segment->tool.command = event.text;
+                    if (!event.cwd.empty())
+                        segment->tool.cwd = event.cwd;
+                    if (!event.output.empty()) {
+                        if (event.output_is_delta)
+                            segment->tool.output += event.output;
+                        else if (segment->tool.output.empty())
+                            segment->tool.output = event.output;
+                    }
+                    if (!event.status.empty())
+                        segment->tool.status = event.status;
+                    if (event.exit_code >= 0)
+                        segment->tool.exit_code = event.exit_code;
+                    if (event.duration_ms >= 0)
+                        segment->tool.duration_ms = event.duration_ms;
+                    if (event.tool_completed)
+                        segment->tool.completed = true;
+                }
+            } else if (event.kind == EventKind::AssistantTextDelta) {
+                m_progress_text.clear();
+                m_progress_conversation_id = event.conversation_id;
                 if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
                     messages.push_back({ChatMessageRole::Assistant, {}});
-                messages.back().content += event.text;
-            } else if (event.kind == EventKind::AssistantReasoningDelta) {
-                if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
-                    messages.push_back({ChatMessageRole::Assistant, {}});
-                messages.back().reasoning += event.text;
-            } else if (event.kind == EventKind::ToolActivity) {
-                if (messages.empty() || messages.back().role != ChatMessageRole::Assistant)
-                    messages.push_back({ChatMessageRole::Assistant, {}});
-                messages.back().tool_activities.push_back(event.text);
-            } else if (event.kind == EventKind::TurnFailed)
+                ChatMessage& message = messages.back();
+                message.content += event.text;
+                if (message.segments.empty() || message.segments.back().kind != ChatSegment::Kind::Text)
+                    message.segments.push_back({ChatSegment::Kind::Text, {}, {}});
+                message.segments.back().text += event.text;
+            } else if (event.kind == EventKind::TurnFailed) {
+                m_progress_text.clear();
                 messages.push_back({ChatMessageRole::Assistant, event.text});
+            } else if (event.kind == EventKind::TurnCompleted) {
+                m_progress_text.clear();
+            }
         } catch (...) {
         }
     }
     render_dock_area();
     render_threads_panel(m_state);
-    render_chat_panel(m_state, m_message_input, m_provider);
+    render_chat_panel(m_state, m_message_input, m_provider, m_progress_text, m_progress_conversation_id);
 
     prepare_backbuffer();
 }

@@ -7,7 +7,8 @@
 #include <queue>
 #include <thread>
 
-using ProviderProcessFn = void (*)(void*, const TurnRequest*, std::vector<Event>*);
+struct ProviderRuntime;
+using ProviderProcessFn = void (*)(void*, const TurnRequest*, ProviderRuntime*);
 
 struct ProviderRuntime {
     ProviderProcessFn process;
@@ -27,6 +28,7 @@ void provider_runtime_init(ProviderRuntime* runtime, ProviderProcessFn process,
 Result provider_runtime_start(ProviderRuntime* runtime);
 Result provider_runtime_submit(ProviderRuntime* runtime, TurnRequest request);
 std::vector<Event> provider_runtime_poll_events(ProviderRuntime* runtime);
+void provider_runtime_emit(ProviderRuntime* runtime, const Event* event);
 void provider_runtime_shutdown(ProviderRuntime* runtime);
 
 #endif

@@ -15,13 +15,7 @@ void run_provider(ProviderRuntime* runtime) {
             runtime->requests.pop();
         }
 
-        std::vector<Event> events;
-        runtime->process(runtime->process_context, &request, &events);
-        {
-            std::lock_guard lock(runtime->event_mutex);
-            for (Event& event : events)
-                runtime->events.push_back(std::move(event));
-        }
+        runtime->process(runtime->process_context, &request, runtime);
     }
 }
 
@@ -63,6 +57,11 @@ std::vector<Event> provider_runtime_poll_events(ProviderRuntime* runtime) {
     std::vector<Event> events;
     events.swap(runtime->events);
     return events;
+}
+
+void provider_runtime_emit(ProviderRuntime* runtime, const Event* event) {
+    std::lock_guard lock(runtime->event_mutex);
+    runtime->events.push_back(*event);
 }
 
 void provider_runtime_shutdown(ProviderRuntime* runtime) {

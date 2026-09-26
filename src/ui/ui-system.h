@@ -11,6 +11,8 @@ private:
     ApplicationState& m_state;
     Provider& m_provider;
     std::string m_message_input;
+    std::string m_progress_text;
+    std::string m_progress_conversation_id;
 
     void new_frame();
     void prepare_backbuffer();

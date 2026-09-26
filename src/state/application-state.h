@@ -2,6 +2,7 @@
 #define APPLICATION_STATE_H
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -10,11 +11,29 @@ enum class ChatMessageRole {
     Assistant,
 };
 
+struct ToolActivity {
+    std::string id;
+    std::string command;
+    std::string cwd;
+    std::string output;
+    std::string status;
+    std::optional<int> exit_code;
+    std::optional<int> duration_ms;
+    bool completed = false;
+};
+
+struct ChatSegment {
+    enum class Kind { Text, Tool } kind = Kind::Text;
+    std::string text;
+    ToolActivity tool;
+};
+
 struct ChatMessage {
     ChatMessageRole role;
     std::string content;
     std::string reasoning;
     std::vector<std::string> tool_activities;
+    std::vector<ChatSegment> segments;
 };
 
 struct ChatThread {

@@ -18,6 +18,7 @@ enum class EventKind {
     ProviderThreadStarted,
     AssistantTextDelta,
     AssistantReasoningDelta,
+    ReasoningSummaryDelta,
     ToolActivity,
     ApprovalRequested,
     TurnCompleted,
@@ -31,6 +32,14 @@ struct Event {
     std::string text;
     std::string provider_thread_id;
     ProviderRequestId provider_request_id;
+    std::string item_id;
+    std::string cwd;
+    std::string output;
+    int exit_code = -1;
+    bool tool_completed = false;
+    bool output_is_delta = false;
+    std::string status;
+    int duration_ms = -1;
 };
 
 struct TurnRequest {
@@ -52,6 +61,7 @@ using ProviderRespondFn = Result (*)(Provider*, const ProviderRequestId&, Approv
 using ProviderCancelFn = void (*)(Provider*, TurnId);
 using ProviderPollFn = std::vector<Event> (*)(Provider*);
 using ProviderDestroyFn = void (*)(Provider*);
+using ProviderEventSink = void (*)(void*, const Event*);
 
 struct Provider {
     std::string_view name;
@@ -75,7 +85,7 @@ struct CodexOptions {
     std::filesystem::path executable = "codex";
     std::filesystem::path codex_home;
     std::string default_model = "gpt-6-luna";
-    Result (*execute)(void*, const TurnRequest*, std::string*) = nullptr;
+    Result (*execute)(void*, const TurnRequest*, ProviderEventSink, void*) = nullptr;
     void* execute_context = nullptr;
 };
 

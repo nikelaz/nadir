@@ -1,19 +1,23 @@
 #include "provider_runtime.h"
+#include <utility>
 
 namespace {
 struct FakeState {
     ProviderRuntime runtime;
 };
 
-void process_fake(void*, const TurnRequest* request, std::vector<Event>* events) {
-    events->push_back(Event{EventKind::AssistantTextDelta,
-                            request->conversation_id,
-                            request->turn_id,
-                            "How can I help you?",
-                            {},
-                            {}});
-    events->push_back(
-        Event{EventKind::TurnCompleted, request->conversation_id, request->turn_id, {}, {}, {}});
+void process_fake(void*, const TurnRequest* request, ProviderRuntime* runtime) {
+    const Event response{EventKind::AssistantTextDelta,
+                         request->conversation_id,
+                         request->turn_id,
+                         "How can I help you?",
+                         {},
+                         {}};
+    provider_runtime_emit(runtime, &response);
+
+    const Event completed{EventKind::TurnCompleted, request->conversation_id, request->turn_id,
+                          {}, {}, {}};
+    provider_runtime_emit(runtime, &completed);
 }
 
 Result start_fake(Provider* provider) {
@@ -49,7 +53,7 @@ ProviderPtr make_fake_provider() {
     FakeState* state = new FakeState{};
     provider_runtime_init(&state->runtime, process_fake, nullptr);
 
-    Provider* provider = new Provider{"fake",       state,       start_fake, submit_fake,
-                                      respond_fake, cancel_fake, poll_fake,  destroy_fake};
+    Provider* provider = new Provider{"fake", state, start_fake, submit_fake, respond_fake,
+                                      cancel_fake, poll_fake, destroy_fake};
     return ProviderPtr(provider, destroy_provider);
 }
