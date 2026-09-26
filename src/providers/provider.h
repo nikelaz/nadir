@@ -14,6 +14,18 @@ using ConversationId = std::string;
 using TurnId = std::uint64_t;
 using ProviderRequestId = std::string;
 
+struct ReasoningOption {
+    std::string value;
+    std::string description;
+};
+
+struct ModelOption {
+    std::string id;
+    std::string name;
+    std::string default_reasoning_effort;
+    std::vector<ReasoningOption> reasoning_efforts;
+};
+
 enum class EventKind {
     ProviderThreadStarted,
     AssistantTextDelta,
@@ -50,6 +62,7 @@ struct TurnRequest {
     std::filesystem::path working_directory;
     std::string model;
     std::string provider_thread_id;
+    std::string reasoning_effort;
 };
 
 enum class ApprovalDecision { ApproveOnce, Deny };
@@ -72,6 +85,8 @@ struct Provider {
     ProviderCancelFn cancel;
     ProviderPollFn poll_events;
     ProviderDestroyFn destroy;
+    std::vector<ModelOption> models{};
+    std::string default_model{};
 };
 
 inline void destroy_provider(Provider* provider) {

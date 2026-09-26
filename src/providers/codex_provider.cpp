@@ -242,6 +242,87 @@ std::string conversation_prompt(const TurnRequest* request) {
     return prompt;
 }
 
+std::vector<ModelOption> fetch_codex_models(const CodexOptions* options,
+                                            ProviderRuntime* runtime) {
+    static const bool ignore_sigpipe = [] {
+        std::signal(SIGPIPE, SIG_IGN);
+        return true;
+    }();
+    (void)ignore_sigpipe;
+
+    std::vector<ModelOption> models;
+    CodexProcess process;
+    if (start_codex_process(options, &process).status == ResultStatus::Error) {
+        force_stop_codex_process(&process);
+        return models;
+    }
+
+    TurnRequest request;
+    StreamContext stream{runtime, &request, false, false, {}};
+    std::string error;
+    Json initialize = {
+        {"method", "initialize"},
+        {"id", 1},
+        {"params", {{"clientInfo", {{"name", "nadir"}, {"title", "Nadir"},
+                                      {"version", "0.1.0"}}}}},
+    };
+    bool success = write_message(process.input, initialize) &&
+                   wait_for_response(&process, 1, &stream, nullptr, &error) &&
+                   write_message(process.input,
+                                 Json{{"method", "initialized"}, {"params", Json::object()}});
+    std::string cursor;
+    int request_id = 2;
+    while (success) {
+        Json params = {{"includeHidden", false}, {"limit", 100}};
+        if (!cursor.empty())
+            params["cursor"] = cursor;
+        Json response;
+        success = write_message(process.input,
+                                Json{{"method", "model/list"}, {"id", request_id},
+                                     {"params", params}}) &&
+                  wait_for_response(&process, request_id, &stream, &response, &error);
+        ++request_id;
+        if (!success)
+            break;
+
+        const Json result = response.value("result", Json::object());
+        const Json data = result.value("data", Json::array());
+        if (!data.is_array())
+            break;
+        for (const Json& value : data) {
+            if (!value.is_object() || value.value("hidden", false))
+                continue;
+            ModelOption model;
+            model.id = string_value(value, "model");
+            if (model.id.empty())
+                model.id = string_value(value, "id");
+            model.name = string_value(value, "displayName");
+            if (model.name.empty())
+                model.name = model.id;
+            model.default_reasoning_effort = string_value(value, "defaultReasoningEffort");
+            const Json efforts = value.value("supportedReasoningEfforts", Json::array());
+            if (efforts.is_array()) {
+                for (const Json& effort : efforts) {
+                    if (!effort.is_object())
+                        continue;
+                    const std::string id = string_value(effort, "reasoningEffort");
+                    if (!id.empty())
+                        model.reasoning_efforts.push_back(
+                            {id, string_value(effort, "description")});
+                }
+            }
+            if (!model.id.empty())
+                models.push_back(std::move(model));
+        }
+        cursor = string_value(result, "nextCursor");
+        if (cursor.empty())
+            break;
+    }
+
+    stop_codex_process(&process);
+    return models;
+}
+
 Result run_codex(const CodexOptions* options, const TurnRequest* request,
                  ProviderRuntime* runtime) {
     static const bool ignore_sigpipe = [] {
@@ -295,6 +376,10 @@ Result run_codex(const CodexOptions* options, const TurnRequest* request,
             {"threadId", thread_id},
             {"input", Json::array({{{"type", "text"}, {"text", conversation_prompt(request)}}})},
         };
+        if (!request->model.empty())
+            turn_params["model"] = request->model;
+        if (!request->reasoning_effort.empty())
+            turn_params["effort"] = request->reasoning_effort;
         if (!request->working_directory.empty())
             turn_params["cwd"] = request->working_directory.string();
         success = write_message(process.input,
@@ -344,6 +429,12 @@ void process_codex(void* context, const TurnRequest* request, ProviderRuntime* r
 
 Result start_codex(Provider* provider) {
     CodexState* state = static_cast<CodexState*>(provider->state);
+    provider->default_model = state->options.default_model;
+    if (state->options.execute == nullptr)
+        provider->models = fetch_codex_models(&state->options, &state->runtime);
+    if (provider->models.empty())
+        provider->models.push_back({state->options.default_model,
+                                    state->options.default_model, {}, {}});
     return provider_runtime_start(&state->runtime);
 }
 

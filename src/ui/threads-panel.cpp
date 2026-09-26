@@ -21,9 +21,9 @@ std::string next_thread_id(const ApplicationState& state) {
 void render_threads_panel(ApplicationState& state) {
     static std::optional<std::size_t> pending_delete;
     bool open_delete_confirmation = false;
-    std::optional<std::size_t> pending_selection;
 
     ImGui::Begin("Threads");
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 4.0f));
     const float button_line_x = ImGui::GetCursorPosX();
     const float button_width = ImGui::GetContentRegionAvail().x;
     const float horizontal_bleed = ImGui::GetStyle().ItemSpacing.x * 0.5f;
@@ -60,7 +60,7 @@ void render_threads_panel(ApplicationState& state) {
         const bool selected = ImGui::Selectable("##thread", state.selected_thread == i, 0,
                                                 ImVec2(0.0f, card_height));
         if (selected)
-            pending_selection = i;
+            state.selected_thread = i;
 
         if (ImGui::BeginPopupContextItem("thread_context", ImGuiPopupFlags_MouseButtonRight)) {
             if (ImGui::MenuItem("Delete thread")) {
@@ -87,17 +87,6 @@ void render_threads_panel(ApplicationState& state) {
 
         ImGui::PopID();
         ImGui::Spacing();
-    }
-
-    if (pending_selection && *pending_selection > 0) {
-        const std::size_t index = *pending_selection;
-        std::rotate(state.threads.begin(), state.threads.begin() + index,
-                    state.threads.begin() + index + 1);
-        if (pending_delete && *pending_delete < index)
-            ++*pending_delete;
-        state.selected_thread = 0;
-    } else if (pending_selection) {
-        state.selected_thread = 0;
     }
 
     if (open_delete_confirmation)
@@ -141,5 +130,6 @@ void render_threads_panel(ApplicationState& state) {
         ImGui::EndPopup();
     }
 
+    ImGui::PopStyleVar();
     ImGui::End();
 }

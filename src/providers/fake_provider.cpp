@@ -55,5 +55,7 @@ ProviderPtr make_fake_provider() {
 
     Provider* provider = new Provider{"fake", state, start_fake, submit_fake, respond_fake,
                                       cancel_fake, poll_fake, destroy_fake};
+    provider->default_model = "fake-model";
+    provider->models.push_back({"fake-model", "Fake model", {}, {}});
     return ProviderPtr(provider, destroy_provider);
 }

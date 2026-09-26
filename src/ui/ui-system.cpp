@@ -104,6 +104,7 @@ void set_premiere_theme() {
     ImVec4* colors = style.Colors;
 
     colors[ImGuiCol_Text] = ImVec4(0.91f, 0.91f, 0.91f, 1.0f);
+    colors[ImGuiCol_TextLink] = ImVec4(0.82f, 0.84f, 0.90f, 1.0f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.55f, 0.55f, 0.55f, 1.0f);
     colors[ImGuiCol_WindowBg] = background;
     colors[ImGuiCol_ChildBg] = panel;
@@ -153,7 +154,8 @@ void set_premiere_theme() {
 }
 
 UISystem::UISystem(GLFWwindow* window, ApplicationState& state, Provider& provider)
-    : m_window(window), m_state(state), m_provider(provider) {}
+    : m_window(window), m_state(state), m_provider(provider),
+      m_selected_model(provider.default_model) {}
 
 Result UISystem::init() {
     IMGUI_CHECKVERSION();
@@ -287,7 +289,8 @@ void UISystem::render_frame_to_backbuffer() {
     }
     render_dock_area();
     render_threads_panel(m_state);
-    render_chat_panel(m_state, m_message_input, m_provider, m_progress_text, m_progress_conversation_id);
+    render_chat_panel(m_state, m_message_input, m_provider, m_selected_model,
+                      m_selected_reasoning_effort, m_progress_text, m_progress_conversation_id);
 
     prepare_backbuffer();
 }
