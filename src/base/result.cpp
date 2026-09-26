@@ -10,6 +10,6 @@ Result result_ok() {
 Result result_error(std::string_view error_message) {
     return {
         .status = ResultStatus::Error,
-        .error = error_message,
+        .error = std::string(error_message),
     };
 }

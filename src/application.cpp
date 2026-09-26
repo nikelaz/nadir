@@ -1,19 +1,19 @@
 #include "application.h"
-#include <GLFW/glfw3.h>
 #include "base/result.h"
-#include <tinyfiledialogs.h>
+#include <GLFW/glfw3.h>
 #include <string>
+#include <tinyfiledialogs.h>
 
 constexpr int kWindowWidth = 1440;
 constexpr int kWindowHeight = 900;
 
 static void glfw_error_callback(int code, const char* description) {
     const std::string message = "GLFW error " + std::to_string(code) + ": " +
-        (description != nullptr ? description : "Unknown error");
+                                (description != nullptr ? description : "Unknown error");
     tinyfd_messageBox("Nadir - GLFW error", message.c_str(), "ok", "error", 1);
 }
 
-Result Application::init() { 
+Result Application::init() {
     Result glfw_init_result = window_init();
     if (glfw_init_result.status == ResultStatus::Error) {
         return glfw_init_result;
@@ -33,15 +33,26 @@ Result Application::init() {
         return state_result;
     }
 
-    m_ui.emplace(m_window, m_state);
+    m_provider = make_codex_provider();
+    Result provider_result = m_provider->start(m_provider.get());
+    if (provider_result.status == ResultStatus::Error) {
+
+        m_state_store.close();
+        window_deinit();
+        return provider_result;
+    }
+    m_ui.emplace(m_window, m_state, *m_provider);
 
     if (!m_ui) {
-      window_deinit();
-      return result_error("UI System does not have a value unexpectedly");
+        m_provider.reset();
+
+        window_deinit();
+        return result_error("UI System does not have a value unexpectedly");
     }
 
-    Result ui_init_result = m_ui->init(); 
+    Result ui_init_result = m_ui->init();
     if (ui_init_result.status == ResultStatus::Error) {
+        m_provider.reset();
         m_state_store.close();
         window_deinit();
         return ui_init_result;
@@ -54,7 +65,7 @@ Result Application::init() {
 
 void Application::deinit() {
     if (m_initialized && m_ui) {
-      m_ui->deinit();
+        m_ui->deinit();
     }
 
     if (m_initialized) {
@@ -64,11 +75,12 @@ void Application::deinit() {
             tinyfd_messageBox("Nadir", error_message.c_str(), "ok", "error", 1);
         }
     }
+    m_provider.reset();
     m_state_store.close();
 
     window_deinit();
 
-    m_initialized = false; 
+    m_initialized = false;
 }
 
 Result Application::window_init() {
@@ -82,17 +94,11 @@ Result Application::window_init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    #ifdef __APPLE__
+#ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-    #endif
+#endif
 
-    m_window = glfwCreateWindow(
-        kWindowWidth,
-        kWindowHeight,
-        "Nadir",
-        nullptr,
-        nullptr 
-    );
+    m_window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Nadir", nullptr, nullptr);
 
     if (m_window == nullptr) {
         glfwTerminate();
@@ -105,7 +111,7 @@ Result Application::window_init() {
     return result_ok();
 };
 
-void Application::window_deinit() { 
+void Application::window_deinit() {
     glfwDestroyWindow(m_window);
     glfwTerminate();
 }
@@ -118,8 +124,7 @@ void Application::run() {
     }
 
     if (!m_ui.has_value()) {
-        tinyfd_messageBox("Nadir", "UI System is not initialized in Application",
-                          "ok", "error", 1);
+        tinyfd_messageBox("Nadir", "UI System is not initialized in Application", "ok", "error", 1);
         return;
     }
 

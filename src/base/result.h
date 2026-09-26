@@ -1,6 +1,7 @@
 #ifndef RESULT_H
 #define RESULT_H
 
+#include <string>
 #include <string_view>
 
 enum class ResultStatus {
@@ -10,7 +11,7 @@ enum class ResultStatus {
 
 struct Result {
     ResultStatus status;
-    std::string_view error;
+    std::string error;
 };
 
 Result result_ok();

@@ -22,6 +22,7 @@ find_package(OpenGL REQUIRED)
 
 set_source_files_properties(third_party/tinyfiledialogs/tinyfiledialogs.c PROPERTIES LANGUAGE CXX)
 add_subdirectory(third_party/sqlite3 EXCLUDE_FROM_ALL)
+add_subdirectory(third_party/googletest EXCLUDE_FROM_ALL)
 
 add_library(imgui STATIC
     third_party/imgui/imgui.cpp
@@ -41,6 +42,9 @@ target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 add_executable(nadir
     src/main.cpp
     src/base/result.cpp
+    src/providers/provider_runtime.cpp
+    src/providers/codex_provider.cpp
+    src/providers/fake_provider.cpp
     src/application.cpp
     src/persistence/persistent-store.cpp
     src/ui/chat-panel.cpp
@@ -60,4 +64,13 @@ if(MSVC)
     target_compile_options(nadir PRIVATE /W4 /permissive-)
 else()
     target_compile_options(nadir PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(provider_tests tests/provider_tests.cpp src/base/result.cpp src/providers/provider_runtime.cpp src/providers/codex_provider.cpp src/providers/fake_provider.cpp)
+    target_link_libraries(provider_tests PRIVATE GTest::gtest_main)
+    target_compile_options(provider_tests PRIVATE -Wall -Wextra -Wpedantic)
+    include(GoogleTest)
+    gtest_discover_tests(provider_tests)
 endif()
